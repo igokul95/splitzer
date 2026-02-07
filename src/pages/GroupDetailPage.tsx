@@ -1,0 +1,138 @@
+import { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import { Id } from "../../convex/_generated/dataModel";
+import { GroupHeader } from "@/components/groups/GroupHeader";
+import { BalanceSummary } from "@/components/groups/BalanceSummary";
+import {
+  GroupTabBar,
+  BalancesTab,
+  TotalsTab,
+  ExpensesTab,
+} from "@/components/groups/GroupTabs";
+import { Plus, Receipt } from "lucide-react";
+
+type Tab = "expenses" | "balances" | "totals";
+
+export function GroupDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<Tab>("expenses");
+
+  const group = useQuery(
+    api.groups.getGroup,
+    id ? { groupId: id as Id<"groups"> } : "skip"
+  );
+  const viewer = useQuery(api.users.getViewer);
+
+  if (!id) {
+    navigate("/groups");
+    return null;
+  }
+
+  if (group === undefined || viewer === undefined) {
+    return <LoadingSkeleton />;
+  }
+
+  if (group === null) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center">
+        <p className="text-sm text-muted-foreground">Group not found</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-dvh bg-background">
+      <div className="mx-auto w-full max-w-md">
+        {/* Hero header */}
+        <GroupHeader
+          groupId={group._id}
+          name={group.name}
+          memberCount={group.memberCount}
+          type={group.type}
+        />
+
+        {/* Balance summary bar */}
+        <BalanceSummary
+          myNet={group.myNet}
+          defaultCurrency={group.defaultCurrency}
+          balances={group.myBalances}
+        />
+
+        {/* Tab bar */}
+        <GroupTabBar
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          onSettleUp={() => {
+            // TODO: implement settle up in Phase 4
+          }}
+        />
+
+        {/* Tab content */}
+        <div className="pb-24">
+          {activeTab === "expenses" && <ExpensesTab />}
+          {activeTab === "balances" && viewer && (
+            <BalancesTab
+              balances={group.allBalances}
+              currentUserId={viewer._id}
+            />
+          )}
+          {activeTab === "totals" && (
+            <TotalsTab
+              memberCount={group.memberCount}
+              defaultCurrency={group.defaultCurrency}
+            />
+          )}
+        </div>
+
+        {/* FAB — Add expense (disabled until Phase 3) */}
+        <div className="fixed bottom-6 right-4 z-50 flex max-w-md flex-col items-end gap-2">
+          <button
+            className="flex items-center gap-2 rounded-full bg-teal-600 px-5 py-3 text-sm font-medium text-white shadow-lg transition-all hover:bg-teal-700 active:scale-95"
+            onClick={() => {
+              // TODO: Phase 3 — navigate to add expense
+            }}
+          >
+            <Receipt className="h-4 w-4" />
+            Add expense
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="min-h-dvh bg-background">
+      <div className="mx-auto w-full max-w-md">
+        {/* Hero skeleton */}
+        <div className="bg-teal-700 px-4 pb-6 pt-[env(safe-area-inset-top)]">
+          <div className="flex items-center justify-between py-3">
+            <div className="h-9 w-9 animate-pulse rounded-full bg-white/20" />
+            <div className="h-9 w-9 animate-pulse rounded-full bg-white/20" />
+          </div>
+          <div className="mt-2 h-7 w-48 animate-pulse rounded bg-white/20" />
+          <div className="mt-3 flex gap-2">
+            <div className="h-6 w-20 animate-pulse rounded-full bg-white/20" />
+            <div className="h-6 w-24 animate-pulse rounded-full bg-white/20" />
+          </div>
+        </div>
+        {/* Content skeleton */}
+        <div className="space-y-4 p-4">
+          <div className="h-4 w-48 animate-pulse rounded bg-muted" />
+          <div className="flex gap-2">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="h-8 w-20 animate-pulse rounded-full bg-muted"
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

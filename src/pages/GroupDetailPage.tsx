@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
@@ -11,7 +11,7 @@ import {
   TotalsTab,
   ExpensesTab,
 } from "@/components/groups/GroupTabs";
-import { Plus, Receipt } from "lucide-react";
+import { UserPlus, Link as LinkIcon, Receipt } from "lucide-react";
 
 type Tab = "expenses" | "balances" | "totals";
 
@@ -54,38 +54,45 @@ export function GroupDetailPage() {
           type={group.type}
         />
 
-        {/* Balance summary bar */}
-        <BalanceSummary
-          myNet={group.myNet}
-          defaultCurrency={group.defaultCurrency}
-          balances={group.myBalances}
-        />
-
-        {/* Tab bar */}
-        <GroupTabBar
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          onSettleUp={() => {
-            // TODO: implement settle up in Phase 4
-          }}
-        />
-
-        {/* Tab content */}
-        <div className="pb-24">
-          {activeTab === "expenses" && <ExpensesTab />}
-          {activeTab === "balances" && viewer && (
-            <BalancesTab
-              balances={group.allBalances}
-              currentUserId={viewer._id}
-            />
-          )}
-          {activeTab === "totals" && (
-            <TotalsTab
-              memberCount={group.memberCount}
+        {group.memberCount <= 1 ? (
+          /* Solo member empty state */
+          <SoloMemberCard groupId={id} />
+        ) : (
+          <>
+            {/* Balance summary bar */}
+            <BalanceSummary
+              myNet={group.myNet}
               defaultCurrency={group.defaultCurrency}
+              balances={group.myBalances}
             />
-          )}
-        </div>
+
+            {/* Tab bar */}
+            <GroupTabBar
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              onSettleUp={() => {
+                // TODO: implement settle up in Phase 4
+              }}
+            />
+
+            {/* Tab content */}
+            <div className="pb-24">
+              {activeTab === "expenses" && <ExpensesTab />}
+              {activeTab === "balances" && viewer && (
+                <BalancesTab
+                  balances={group.allBalances}
+                  currentUserId={viewer._id}
+                />
+              )}
+              {activeTab === "totals" && (
+                <TotalsTab
+                  memberCount={group.memberCount}
+                  defaultCurrency={group.defaultCurrency}
+                />
+              )}
+            </div>
+          </>
+        )}
 
         {/* FAB — Add expense (disabled until Phase 3) */}
         <div className="fixed bottom-6 right-4 z-50 flex max-w-md flex-col items-end gap-2">
@@ -97,6 +104,31 @@ export function GroupDetailPage() {
           >
             <Receipt className="h-4 w-4" />
             Add expense
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SoloMemberCard({ groupId }: { groupId: string }) {
+  return (
+    <div className="px-4 py-8">
+      <div className="rounded-2xl bg-muted/40 px-6 py-8">
+        <p className="mb-6 text-center text-sm text-muted-foreground">
+          You're the only one here!
+        </p>
+        <div className="flex flex-col gap-3">
+          <Link
+            to={`/groups/${groupId}/add-members`}
+            className="flex items-center justify-center gap-2 rounded-full bg-teal-600 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-teal-700 active:scale-[0.98]"
+          >
+            <UserPlus className="h-4 w-4" />
+            Add members
+          </Link>
+          <button className="flex items-center justify-center gap-2 rounded-full border border-border bg-background px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted">
+            <LinkIcon className="h-4 w-4" />
+            Share a link
           </button>
         </div>
       </div>

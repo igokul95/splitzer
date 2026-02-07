@@ -51,7 +51,8 @@
 - [x] `groups.getMyGroups` — query: returns all groups for current user with per-group balances and overall summary
 - [x] `groups.getGroup` — query: returns single group with members, balances, and all pairwise balance details
 - [x] `groups.getGroupMembers` — query: returns all members (including left) with user details
-- [x] `groups.createGroup` — mutation: creates group, adds creator as admin, invites members (ghost users if needed), logs activities
+- [x] `groups.getKnownContacts` — query: returns people user has been in groups with, excluding current group members (for Add Members view)
+- [x] `groups.createGroup` — mutation: creates group with name + type only, adds creator as admin, logs activity (members added separately)
 - [x] `groups.updateGroup` — mutation: updates group name, type, currency, simplifyDebts
 - [x] `groups.addMember` — mutation: adds member to existing group (find or create user), logs activity
 - [x] `groups.removeMember` — mutation: removes member (admin only, zero balance check), logs activity
@@ -74,18 +75,34 @@
 - [x] Create `GroupCard.tsx` — group type icon, name, balance status, per-member balance summaries
 
 ### 7. Create Group UI
-- [x] Create `CreateGroupPage.tsx` — form with name, type selector, currency, simplify debts toggle, add members section
+- [x] Create `CreateGroupPage.tsx` — simplified form with name + type selector only (members added post-creation)
 
 ### 8. Group Detail UI
 - [x] Create `GroupHeader.tsx` — teal hero header with back button, settings, name, member count badge
 - [x] Create `BalanceSummary.tsx` — balance bar showing who owes whom
 - [x] Create `GroupTabs.tsx` — tab pills (Settle up, Expenses, Balances, Totals) with content for each
 - [x] Create `GroupDetailPage.tsx` — assembles header, balance, tabs, and FAB for "Add expense"
+- [x] Solo member empty state — "You're the only one here!" card with "Add members" + "Share a link" buttons
 
-### 9. Group Settings UI
+### 9. Add Members Flow
+- [x] Create `AddMembersPage.tsx` — search bar, "Add a new contact" link, known contacts list with multi-select checkboxes, floating confirm button
+- [x] Create `AddContactPage.tsx` — name + email/phone form, reassurance text, calls addMember mutation
+- [x] Add routes `/groups/:id/add-members` and `/groups/:id/add-contact` to `App.tsx`
+
+### 10. Group Settings UI
 - [x] Create `GroupSettingsPage.tsx` — edit name/type/currency/simplifyDebts, member list with add/remove, leave group, delete group (with confirmation dialogs)
 
-### 10. Placeholder & Utility Pages
+### 11. UI Refinements
+- [x] Remove filter icon (SlidersHorizontal) from Groups list OverallBalance banner
+- [x] Add `groups.getAllKnownContacts` backend query (no groupId needed, for Create Group flow)
+- [x] Create `CreateAddMembersPage` — full-screen add-members for create flow (uses `getAllKnownContacts`, returns selections via navigation state)
+- [x] Create `CreateAddContactPage` — full-screen add-contact for create flow (collects name/phone/email, returns via navigation state)
+- [x] Rewrite `CreateGroupPage` — Members section showing You + pending members; "Add members" navigates to full-screen `CreateAddMembersPage`; form state preserved via `location.state`; group + members only created on submit
+- [x] Update `AddMembersPage` and `AddContactPage` — support `returnTo` in `location.state` so they navigate back to settings (not group detail) when called from Group Settings
+- [x] Update `GroupSettingsPage` — "Add members" navigates to full-screen `AddMembersPage` with `returnTo: settings`; returns to settings after adding
+- [x] Add routes `/groups/create/add-members` and `/groups/create/add-contact` to `App.tsx`
+
+### 12. Placeholder & Utility Pages
 - [x] Create `FriendsPage.tsx` — placeholder with empty state
 - [x] Create `ActivityPage.tsx` — placeholder with empty state
 - [x] Create `AccountPage.tsx` — user profile, email, default currency, sign out button

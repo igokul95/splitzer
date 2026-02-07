@@ -56,18 +56,12 @@ export function GroupSettingsPage() {
   );
 
   const updateGroup = useMutation(api.groups.updateGroup);
-  const addMember = useMutation(api.groups.addMember);
   const removeMember = useMutation(api.groups.removeMember);
   const leaveGroup = useMutation(api.groups.leaveGroup);
   const deleteGroup = useMutation(api.groups.deleteGroup);
 
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
-
-  // Add member form state
-  const [memberName, setMemberName] = useState("");
-  const [memberEmail, setMemberEmail] = useState("");
-  const [isAddingMember, setIsAddingMember] = useState(false);
 
   // Dialogs
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
@@ -115,24 +109,6 @@ export function GroupSettingsPage() {
       setError(err instanceof Error ? err.message : "Failed to update");
     }
     setIsSaving(false);
-  };
-
-  const handleAddMember = async () => {
-    if (!memberName.trim()) return;
-    setIsAddingMember(true);
-    setError("");
-    try {
-      await addMember({
-        groupId,
-        name: memberName.trim(),
-        email: memberEmail.trim() || undefined,
-      });
-      setMemberName("");
-      setMemberEmail("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to add member");
-    }
-    setIsAddingMember(false);
   };
 
   const handleRemoveMember = async (userId: Id<"users">) => {
@@ -310,43 +286,20 @@ export function GroupSettingsPage() {
               ))}
             </div>
 
-            {/* Add member form */}
-            <div className="space-y-2 rounded-lg border border-dashed border-border p-3">
-              <Input
-                placeholder="Name"
-                value={memberName}
-                onChange={(e) => setMemberName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    if (memberName.trim()) handleAddMember();
-                  }
-                }}
-              />
-              <Input
-                placeholder="Email (optional)"
-                type="email"
-                value={memberEmail}
-                onChange={(e) => setMemberEmail(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    if (memberName.trim()) handleAddMember();
-                  }
-                }}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleAddMember}
-                disabled={!memberName.trim() || isAddingMember}
-                className="w-full gap-1.5"
-              >
-                <UserPlus className="h-3.5 w-3.5" />
-                {isAddingMember ? "Adding..." : "Add member"}
-              </Button>
-            </div>
+            {/* Add members button */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() =>
+                navigate(`/groups/${id}/add-members`, {
+                  state: { returnTo: `/groups/${id}/settings` },
+                })
+              }
+              className="w-full gap-2"
+            >
+              <UserPlus className="h-4 w-4" />
+              Add members
+            </Button>
           </div>
 
           {/* Error */}

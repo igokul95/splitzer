@@ -8,6 +8,10 @@ import { GroupsPage } from "@/pages/GroupsPage";
 import { GroupDetailPage } from "@/pages/GroupDetailPage";
 import { CreateGroupPage } from "@/pages/CreateGroupPage";
 import { GroupSettingsPage } from "@/pages/GroupSettingsPage";
+import { AddMembersPage } from "@/pages/AddMembersPage";
+import { AddContactPage } from "@/pages/AddContactPage";
+import { CreateAddMembersPage } from "@/pages/CreateAddMembersPage";
+import { CreateAddContactPage } from "@/pages/CreateAddContactPage";
 import { FriendsPage } from "@/pages/FriendsPage";
 import { ActivityPage } from "@/pages/ActivityPage";
 import { AccountPage } from "@/pages/AccountPage";
@@ -71,6 +75,22 @@ export default function App() {
               }
             />
             <Route
+              path="/groups/create/add-members"
+              element={
+                <AuthGuard>
+                  <CreateAddMembersPage />
+                </AuthGuard>
+              }
+            />
+            <Route
+              path="/groups/create/add-contact"
+              element={
+                <AuthGuard>
+                  <CreateAddContactPage />
+                </AuthGuard>
+              }
+            />
+            <Route
               path="/groups/:id"
               element={
                 <AuthGuard>
@@ -83,6 +103,22 @@ export default function App() {
               element={
                 <AuthGuard>
                   <GroupSettingsPage />
+                </AuthGuard>
+              }
+            />
+            <Route
+              path="/groups/:id/add-members"
+              element={
+                <AuthGuard>
+                  <AddMembersPage />
+                </AuthGuard>
+              }
+            />
+            <Route
+              path="/groups/:id/add-contact"
+              element={
+                <AuthGuard>
+                  <AddContactPage />
                 </AuthGuard>
               }
             />

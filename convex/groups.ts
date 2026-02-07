@@ -267,10 +267,134 @@ export const getGroupMembers = query({
   },
 });
 
+/**
+ * Get known contacts for the "Add members" view.
+ * Returns people the current user has been in groups with,
+ * excluding those already in the target group.
+ */
+export const getKnownContacts = query({
+  args: { groupId: v.id("groups") },
+  handler: async (ctx, args) => {
+    const me = await getAuthUser(ctx);
+
+    // 1. Get all groups I'm a member of
+    const myMemberships = await ctx.db
+      .query("groupMembers")
+      .withIndex("by_user", (q) => q.eq("userId", me._id))
+      .collect();
+
+    const myGroupIds = myMemberships
+      .filter((m) => m.status !== "left")
+      .map((m) => m.groupId);
+
+    // 2. Get all members from those groups
+    const seenUserIds = new Set<string>();
+    for (const gId of myGroupIds) {
+      const members = await ctx.db
+        .query("groupMembers")
+        .withIndex("by_group", (q) => q.eq("groupId", gId))
+        .collect();
+      for (const m of members) {
+        if (m.status !== "left" && m.userId !== me._id) {
+          seenUserIds.add(m.userId);
+        }
+      }
+    }
+
+    // 3. Get members already in the target group (to exclude)
+    const targetMembers = await ctx.db
+      .query("groupMembers")
+      .withIndex("by_group", (q) => q.eq("groupId", args.groupId))
+      .collect();
+
+    const targetMemberIds = new Set(
+      targetMembers
+        .filter((m) => m.status !== "left")
+        .map((m) => m.userId as string)
+    );
+
+    // 4. Filter out already-in-group and self, then fetch user details
+    const contactIds = [...seenUserIds].filter(
+      (uid) => !targetMemberIds.has(uid)
+    );
+
+    const contacts = await Promise.all(
+      contactIds.map(async (uid) => {
+        const user = await ctx.db.get(uid as Id<"users">);
+        if (!user) return null;
+        return {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          avatarUrl: user.avatarUrl,
+          status: user.status,
+        };
+      })
+    );
+
+    return contacts.filter(Boolean);
+  },
+});
+
+/**
+ * Get all people the current user has been in groups with.
+ * Same as getKnownContacts but without excluding members of a specific group.
+ * Used by CreateGroupPage where no group exists yet.
+ */
+export const getAllKnownContacts = query({
+  args: {},
+  handler: async (ctx) => {
+    const me = await getAuthUser(ctx);
+
+    // 1. Get all groups I'm a member of
+    const myMemberships = await ctx.db
+      .query("groupMembers")
+      .withIndex("by_user", (q) => q.eq("userId", me._id))
+      .collect();
+
+    const myGroupIds = myMemberships
+      .filter((m) => m.status !== "left")
+      .map((m) => m.groupId);
+
+    // 2. Get all members from those groups
+    const seenUserIds = new Set<string>();
+    for (const gId of myGroupIds) {
+      const members = await ctx.db
+        .query("groupMembers")
+        .withIndex("by_group", (q) => q.eq("groupId", gId))
+        .collect();
+      for (const m of members) {
+        if (m.status !== "left" && m.userId !== me._id) {
+          seenUserIds.add(m.userId);
+        }
+      }
+    }
+
+    // 3. Fetch user details
+    const contacts = await Promise.all(
+      [...seenUserIds].map(async (uid) => {
+        const user = await ctx.db.get(uid as Id<"users">);
+        if (!user) return null;
+        return {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          avatarUrl: user.avatarUrl,
+          status: user.status,
+        };
+      })
+    );
+
+    return contacts.filter(Boolean);
+  },
+});
+
 // ─── Mutations ──────────────────────────────────────────────────────────────
 
 /**
- * Create a new group with initial members.
+ * Create a new group. Members are added separately via addMember.
  */
 export const createGroup = mutation({
   args: {
@@ -283,8 +407,61 @@ export const createGroup = mutation({
         v.literal("other")
       )
     ),
-    defaultCurrency: v.string(),
-    simplifyDebts: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const me = await getAuthUser(ctx);
+
+    // Create the group with sensible defaults
+    const groupId = await ctx.db.insert("groups", {
+      name: args.name,
+      createdBy: me._id,
+      defaultCurrency: me.defaultCurrency ?? "INR",
+      simplifyDebts: true,
+      type: args.type,
+    });
+
+    // Add the creator as admin
+    await ctx.db.insert("groupMembers", {
+      groupId,
+      userId: me._id,
+      role: "admin",
+      status: "joined",
+      invitedBy: me._id,
+      joinedAt: Date.now(),
+    });
+
+    // Log group_created activity
+    await ctx.db.insert("activities", {
+      type: "group_created",
+      actorId: me._id,
+      groupId,
+      involvedUserIds: [me._id],
+      metadata: {
+        description: args.name,
+      },
+      createdAt: Date.now(),
+    });
+
+    return groupId;
+  },
+});
+
+/**
+ * Create a group AND add members in a single transaction.
+ * If any member addition fails (e.g. duplicate), the entire operation
+ * is rolled back — no orphan group is created.
+ */
+export const createGroupWithMembers = mutation({
+  args: {
+    name: v.string(),
+    type: v.optional(
+      v.union(
+        v.literal("trip"),
+        v.literal("home"),
+        v.literal("couple"),
+        v.literal("other")
+      )
+    ),
     members: v.array(
       v.object({
         name: v.string(),
@@ -300,8 +477,8 @@ export const createGroup = mutation({
     const groupId = await ctx.db.insert("groups", {
       name: args.name,
       createdBy: me._id,
-      defaultCurrency: args.defaultCurrency,
-      simplifyDebts: args.simplifyDebts,
+      defaultCurrency: me.defaultCurrency ?? "INR",
+      simplifyDebts: true,
       type: args.type,
     });
 
@@ -315,91 +492,6 @@ export const createGroup = mutation({
       joinedAt: Date.now(),
     });
 
-    // Add each invited member
-    for (const member of args.members) {
-      // Find or create user (ghost if not exists)
-      let userId: Id<"users">;
-
-      // Check email first
-      if (member.email) {
-        const byEmail = await ctx.db
-          .query("users")
-          .withIndex("by_email", (q) => q.eq("email", member.email))
-          .first();
-        if (byEmail) {
-          userId = byEmail._id;
-        } else {
-          userId = await ctx.db.insert("users", {
-            name: member.name,
-            email: member.email,
-            phone: member.phone,
-            status: "invited",
-            defaultCurrency: args.defaultCurrency,
-            invitedBy: me._id,
-          });
-        }
-      } else if (member.phone) {
-        const byPhone = await ctx.db
-          .query("users")
-          .withIndex("by_phone", (q) => q.eq("phone", member.phone))
-          .first();
-        if (byPhone) {
-          userId = byPhone._id;
-        } else {
-          userId = await ctx.db.insert("users", {
-            name: member.name,
-            phone: member.phone,
-            status: "invited",
-            defaultCurrency: args.defaultCurrency,
-            invitedBy: me._id,
-          });
-        }
-      } else {
-        // No contact info — create ghost with just name
-        userId = await ctx.db.insert("users", {
-          name: member.name,
-          status: "invited",
-          defaultCurrency: args.defaultCurrency,
-          invitedBy: me._id,
-        });
-      }
-
-      // Skip if it's the creator themselves
-      if (userId === me._id) continue;
-
-      // Check they aren't already a member
-      const existingMembership = await ctx.db
-        .query("groupMembers")
-        .withIndex("by_group_user", (q) =>
-          q.eq("groupId", groupId).eq("userId", userId)
-        )
-        .first();
-
-      if (!existingMembership) {
-        await ctx.db.insert("groupMembers", {
-          groupId,
-          userId,
-          role: "member",
-          status: "invited",
-          invitedBy: me._id,
-        });
-
-        // Log member_added activity
-        const user = await ctx.db.get(userId);
-        await ctx.db.insert("activities", {
-          type: "member_added",
-          actorId: me._id,
-          groupId,
-          involvedUserIds: [me._id, userId],
-          metadata: {
-            memberName: user?.name ?? member.name,
-            memberUserId: userId,
-          },
-          createdAt: Date.now(),
-        });
-      }
-    }
-
     // Log group_created activity
     await ctx.db.insert("activities", {
       type: "group_created",
@@ -411,6 +503,73 @@ export const createGroup = mutation({
       },
       createdAt: Date.now(),
     });
+
+    // Track resolved user IDs to detect duplicates within the batch
+    const seenUserIds = new Set<string>([me._id]);
+
+    // Add each pending member
+    for (const member of args.members) {
+      // Find or create the user
+      let userId: Id<"users"> | null = null;
+
+      if (member.email) {
+        const byEmail = await ctx.db
+          .query("users")
+          .withIndex("by_email", (q) => q.eq("email", member.email))
+          .first();
+        if (byEmail) userId = byEmail._id;
+      }
+
+      if (!userId && member.phone) {
+        const byPhone = await ctx.db
+          .query("users")
+          .withIndex("by_phone", (q) => q.eq("phone", member.phone))
+          .first();
+        if (byPhone) userId = byPhone._id;
+      }
+
+      if (!userId) {
+        userId = await ctx.db.insert("users", {
+          name: member.name,
+          email: member.email,
+          phone: member.phone,
+          status: "invited",
+          defaultCurrency: me.defaultCurrency ?? "INR",
+          invitedBy: me._id,
+        });
+      }
+
+      // Check for duplicates within this batch (including the creator)
+      if (seenUserIds.has(userId)) {
+        throw new Error(
+          `Duplicate member: ${member.name} is already being added to this group`
+        );
+      }
+      seenUserIds.add(userId);
+
+      // Insert group membership
+      await ctx.db.insert("groupMembers", {
+        groupId,
+        userId,
+        role: "member",
+        status: "invited",
+        invitedBy: me._id,
+      });
+
+      // Log member_added activity
+      const user = await ctx.db.get(userId);
+      await ctx.db.insert("activities", {
+        type: "member_added",
+        actorId: me._id,
+        groupId,
+        involvedUserIds: [me._id, userId],
+        metadata: {
+          memberName: user?.name ?? member.name,
+          memberUserId: userId,
+        },
+        createdAt: Date.now(),
+      });
+    }
 
     return groupId;
   },

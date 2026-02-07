@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { useMutation } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { MobileShell } from "@/components/layout/MobileShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import {
   ChevronLeft,
@@ -14,19 +13,17 @@ import {
   Home,
   Heart,
   LayoutGrid,
-  X,
   UserPlus,
+  X,
 } from "lucide-react";
-import { SUPPORTED_CURRENCIES } from "@/lib/format";
 import type { GroupType } from "@/lib/format";
+import type { PendingMember } from "./CreateAddMembersPage";
 
-interface PendingMember {
-  id: string;
-  name: string;
-  email: string;
-}
-
-const GROUP_TYPES: { value: GroupType; label: string; icon: React.ElementType }[] = [
+const GROUP_TYPES: {
+  value: GroupType;
+  label: string;
+  icon: React.ElementType;
+}[] = [
   { value: "trip", label: "Trip", icon: Plane },
   { value: "home", label: "Home", icon: Home },
   { value: "couple", label: "Couple", icon: Heart },
@@ -35,34 +32,31 @@ const GROUP_TYPES: { value: GroupType; label: string; icon: React.ElementType }[
 
 export function CreateGroupPage() {
   const navigate = useNavigate();
-  const createGroup = useMutation(api.groups.createGroup);
+  const location = useLocation();
+  const createGroupWithMembers = useMutation(api.groups.createGroupWithMembers);
+  const viewer = useQuery(api.users.getViewer);
 
-  const [name, setName] = useState("");
-  const [type, setType] = useState<GroupType>("trip");
-  const [currency, setCurrency] = useState("INR");
-  const [simplifyDebts, setSimplifyDebts] = useState(true);
-  const [members, setMembers] = useState<PendingMember[]>([]);
-  const [memberName, setMemberName] = useState("");
-  const [memberEmail, setMemberEmail] = useState("");
+  // Restore form state from navigation (when returning from add-members / add-contact)
+  const restored = location.state?.formState;
+
+  const [name, setName] = useState<string>(restored?.name ?? "");
+  const [type, setType] = useState<GroupType>(restored?.type ?? "trip");
+  const [pendingMembers, setPendingMembers] = useState<PendingMember[]>(
+    restored?.pendingMembers ?? []
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  const addMember = () => {
-    if (!memberName.trim()) return;
-    setMembers((prev) => [
-      ...prev,
-      {
-        id: crypto.randomUUID(),
-        name: memberName.trim(),
-        email: memberEmail.trim(),
-      },
-    ]);
-    setMemberName("");
-    setMemberEmail("");
+  const handleRemoveMember = (index: number) => {
+    setPendingMembers((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const removeMember = (id: string) => {
-    setMembers((prev) => prev.filter((m) => m.id !== id));
+  const handleAddMembers = () => {
+    navigate("/groups/create/add-members", {
+      state: {
+        formState: { name, type, pendingMembers },
+      },
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -76,16 +70,16 @@ export function CreateGroupPage() {
     setError("");
 
     try {
-      const groupId = await createGroup({
+      const groupId = await createGroupWithMembers({
         name: name.trim(),
         type,
-        defaultCurrency: currency,
-        simplifyDebts,
-        members: members.map((m) => ({
+        members: pendingMembers.map((m) => ({
           name: m.name,
           email: m.email || undefined,
+          phone: m.phone || undefined,
         })),
       });
+
       navigate(`/groups/${groupId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create group");
@@ -98,7 +92,7 @@ export function CreateGroupPage() {
       <div className="flex flex-col pt-[env(safe-area-inset-top)]">
         {/* Header */}
         <header className="flex items-center gap-3 py-4">
-          <button onClick={() => navigate(-1)} className="p-1">
+          <button onClick={() => navigate("/groups")} className="p-1">
             <ChevronLeft className="h-5 w-5" />
           </button>
           <h1 className="text-lg font-bold">Create group</h1>
@@ -113,7 +107,7 @@ export function CreateGroupPage() {
               placeholder="e.g. Goa Trip 2026"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              autoFocus
+              autoFocus={!restored}
             />
           </div>
 
@@ -143,115 +137,91 @@ export function CreateGroupPage() {
             </div>
           </div>
 
-          {/* Currency */}
-          <div className="space-y-2">
-            <Label htmlFor="currency">Default currency</Label>
-            <select
-              id="currency"
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
-              {SUPPORTED_CURRENCIES.map((c) => (
-                <option key={c.code} value={c.code}>
-                  {c.symbol} {c.code} — {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Simplify Debts */}
-          <div className="flex items-center justify-between">
-            <div>
-              <Label htmlFor="simplify">Simplify debts</Label>
-              <p className="text-xs text-muted-foreground">
-                Minimize the number of payments between members
-              </p>
-            </div>
-            <Switch
-              id="simplify"
-              checked={simplifyDebts}
-              onCheckedChange={setSimplifyDebts}
-            />
-          </div>
-
           <Separator />
 
-          {/* Members Section */}
+          {/* Members */}
           <div className="space-y-3">
-            <Label>Members</Label>
+            <Label>
+              Members{" "}
+              <span className="text-muted-foreground">
+                ({pendingMembers.length + 1})
+              </span>
+            </Label>
 
-            {/* Added members */}
-            {members.length > 0 && (
-              <div className="space-y-2">
-                {members.map((m) => (
-                  <div
-                    key={m.id}
-                    className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2"
-                  >
+            {/* Member list */}
+            <div className="space-y-2">
+              {/* Creator (You) */}
+              <div className="flex items-center rounded-lg bg-muted/50 px-3 py-2.5">
+                <div className="flex items-center gap-2">
+                  {viewer?.avatarUrl ? (
+                    <img
+                      src={viewer.avatarUrl}
+                      alt=""
+                      className="h-8 w-8 rounded-full"
+                    />
+                  ) : (
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-600 text-xs font-bold text-white">
+                      {(viewer?.name ?? "Y").charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <p className="text-sm font-medium">
+                    {viewer?.name ?? "You"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Pending members */}
+              {pendingMembers.map((m, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2.5"
+                >
+                  <div className="flex items-center gap-2">
+                    {m.avatarUrl ? (
+                      <img
+                        src={m.avatarUrl}
+                        alt=""
+                        className="h-8 w-8 rounded-full"
+                      />
+                    ) : (
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-600 text-xs font-bold text-white">
+                        {m.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
                     <div>
                       <p className="text-sm font-medium">{m.name}</p>
-                      {m.email && (
+                      {(m.email || m.phone) && (
                         <p className="text-xs text-muted-foreground">
-                          {m.email}
+                          {m.email || m.phone}
                         </p>
                       )}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => removeMember(m.id)}
-                      className="rounded p-1 text-muted-foreground hover:text-destructive"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
                   </div>
-                ))}
-              </div>
-            )}
-
-            {/* Add member form */}
-            <div className="space-y-2 rounded-lg border border-dashed border-border p-3">
-              <Input
-                placeholder="Name"
-                value={memberName}
-                onChange={(e) => setMemberName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    if (memberName.trim()) addMember();
-                  }
-                }}
-              />
-              <Input
-                placeholder="Email (optional)"
-                type="email"
-                value={memberEmail}
-                onChange={(e) => setMemberEmail(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    if (memberName.trim()) addMember();
-                  }
-                }}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addMember}
-                disabled={!memberName.trim()}
-                className="w-full gap-1.5"
-              >
-                <UserPlus className="h-3.5 w-3.5" />
-                Add member
-              </Button>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveMember(idx)}
+                    className="rounded p-1 text-muted-foreground hover:text-destructive"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
             </div>
+
+            {/* Add members button */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleAddMembers}
+              className="w-full gap-2"
+            >
+              <UserPlus className="h-4 w-4" />
+              Add members
+            </Button>
           </div>
 
           {/* Error */}
-          {error && (
-            <p className="text-sm text-destructive">{error}</p>
-          )}
+          {error && <p className="text-sm text-destructive">{error}</p>}
 
           {/* Submit */}
           <Button

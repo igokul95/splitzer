@@ -3,7 +3,7 @@ import { api } from "../../convex/_generated/api";
 import { MobileShell } from "@/components/layout/MobileShell";
 import { GroupCard } from "@/components/groups/GroupCard";
 import { Link } from "react-router-dom";
-import { Search, SlidersHorizontal, Users, Plus } from "lucide-react";
+import { Search, Users, Plus } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import type { GroupType } from "@/lib/format";
 
@@ -69,11 +69,10 @@ function OverallBalance({
 }) {
   if (Math.abs(amount) < 0.01) {
     return (
-      <div className="flex items-center justify-between py-4">
+      <div className="py-4">
         <p className="text-sm text-muted-foreground">
           You are all settled up!
         </p>
-        <SlidersHorizontal className="h-5 w-5 text-muted-foreground" />
       </div>
     );
   }
@@ -81,7 +80,7 @@ function OverallBalance({
   const isOwed = amount > 0;
 
   return (
-    <div className="flex items-center justify-between py-4">
+    <div className="py-4">
       <p className="text-sm">
         Overall,{" "}
         <span className={isOwed ? "text-teal-600" : "text-orange-600"}>
@@ -91,7 +90,6 @@ function OverallBalance({
           </span>
         </span>
       </p>
-      <SlidersHorizontal className="h-5 w-5 text-muted-foreground" />
     </div>
   );
 }

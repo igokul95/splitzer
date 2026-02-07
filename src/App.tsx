@@ -13,6 +13,7 @@ import { AddContactPage } from "@/pages/AddContactPage";
 import { CreateAddMembersPage } from "@/pages/CreateAddMembersPage";
 import { CreateAddContactPage } from "@/pages/CreateAddContactPage";
 import { FriendsPage } from "@/pages/FriendsPage";
+import { FriendDetailPage } from "@/pages/FriendDetailPage";
 import { ActivityPage } from "@/pages/ActivityPage";
 import { AccountPage } from "@/pages/AccountPage";
 import { AuthGuard } from "@/components/layout/AuthGuard";
@@ -87,6 +88,14 @@ export default function App() {
               element={
                 <AuthGuard>
                   <CreateAddContactPage />
+                </AuthGuard>
+              }
+            />
+            <Route
+              path="/friends/:id"
+              element={
+                <AuthGuard>
+                  <FriendDetailPage />
                 </AuthGuard>
               }
             />

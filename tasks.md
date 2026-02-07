@@ -108,13 +108,21 @@
 - [x] Create `AccountPage.tsx` — user profile, email, default currency, sign out button
 - [x] Remove old `HomePage.tsx` (replaced by GroupsPage)
 
+### 13. Friends Section
+- [x] Create `convex/friends.ts` — `getMyFriends` query (friend list with per-currency overall balances, per-group breakdowns, visible/hidden split) and `getFriendDetail` query (friend info, per-group breakdowns, shared expense timeline)
+- [x] Create `FriendCard.tsx` — avatar (image or initials), name, balance label (owes you / you owe / settled up), expandable per-group breakdowns
+- [x] Rewrite `FriendsPage.tsx` — header with search + "Add friends", multi-currency overall balance banner, friend list, "Show N hidden friends" toggle, empty state, loading skeleton
+- [x] Create `FriendHeader.tsx` — teal gradient hero header with back button, settings, large avatar, friend name, balance summary
+- [x] Create `FriendDetailPage.tsx` — hero header, action button row (Settle up, Remind, Charts, Convert to), expense timeline grouped by month, empty state
+- [x] Add `/friends/:id` route to `App.tsx`
+
 ## Phase 3: Expenses & Splits
 _Coming next_
 
 ## Phase 4: Balances & Settlements
 _Coming next_
 
-## Phase 5: Friends Tab & Activity Feed
+## Phase 5: Activity Feed
 _Coming next_
 
 ## Phase 6: Currency Support

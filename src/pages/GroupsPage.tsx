@@ -1,14 +1,16 @@
 import { useQuery } from "convex/react";
+import { useNavigate } from "react-router-dom";
 import { api } from "../../convex/_generated/api";
 import { MobileShell } from "@/components/layout/MobileShell";
 import { GroupCard } from "@/components/groups/GroupCard";
 import { Link } from "react-router-dom";
-import { Search, Users, Plus } from "lucide-react";
+import { Search, Users, Plus, Receipt } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import type { GroupType } from "@/lib/format";
 
 export function GroupsPage() {
   const data = useQuery(api.groups.getMyGroups);
+  const navigate = useNavigate();
 
   return (
     <MobileShell>
@@ -56,6 +58,19 @@ export function GroupsPage() {
           </>
         )}
       </div>
+
+      {/* FAB — Add expense */}
+      {data && data.groups.length > 0 && (
+        <div className="fixed bottom-20 right-4 z-50">
+          <button
+            className="flex items-center gap-2 rounded-full bg-teal-600 px-5 py-3 text-sm font-medium text-white shadow-lg transition-all hover:bg-teal-700 active:scale-95"
+            onClick={() => navigate("/expenses/add")}
+          >
+            <Receipt className="h-4 w-4" />
+            Add expense
+          </button>
+        </div>
+      )}
     </MobileShell>
   );
 }

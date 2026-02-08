@@ -3,42 +3,20 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { FriendHeader } from "@/components/friends/FriendHeader";
-import { formatCurrency } from "@/lib/format";
+import { ExpenseRow } from "@/components/expenses/ExpenseRow";
 import {
   HandCoins,
   Bell,
   PieChart,
   ArrowRightLeft,
   Receipt,
-  ShoppingCart,
-  Utensils,
-  Car,
-  Home,
-  Zap,
-  Film,
-  MoreHorizontal,
 } from "lucide-react";
-
-// Category icon mapping
-const CATEGORY_ICONS: Record<string, React.ElementType> = {
-  food: Utensils,
-  transport: Car,
-  housing: Home,
-  utilities: Zap,
-  entertainment: Film,
-  shopping: ShoppingCart,
-  general: Receipt,
-};
-
-function getCategoryIcon(category?: string): React.ElementType {
-  if (!category) return Receipt;
-  return CATEGORY_ICONS[category.toLowerCase()] ?? Receipt;
-}
 
 export function FriendDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
+  const viewer = useQuery(api.users.getViewer);
   const data = useQuery(
     api.friends.getFriendDetail,
     id ? { friendId: id as Id<"users"> } : "skip"
@@ -82,7 +60,23 @@ export function FriendDetailPage() {
             icon={HandCoins}
             variant="primary"
             onClick={() => {
-              // TODO: Phase 4 — settle up
+              if (!viewer || !data || Math.abs(data.overallNet) < 0.005) return;
+              // overallNet > 0 means friend owes me → friend is payer
+              // overallNet < 0 means I owe friend → I am payer
+              const payerId = data.overallNet < 0 ? viewer._id : data.friend._id;
+              const payeeId = data.overallNet < 0 ? data.friend._id : viewer._id;
+              const payerName = data.overallNet < 0 ? "You" : data.friend.name;
+              const payeeName = data.overallNet < 0 ? data.friend.name : "You";
+              navigate("/settle", {
+                state: {
+                  payerId,
+                  payeeId,
+                  payerName,
+                  payeeName,
+                  amount: Math.abs(data.overallNet),
+                  currency: data.currency,
+                },
+              });
             }}
           />
           <ActionButton
@@ -148,9 +142,7 @@ export function FriendDetailPage() {
         <div className="fixed bottom-6 right-4 z-50 flex max-w-md flex-col items-end gap-2">
           <button
             className="flex items-center gap-2 rounded-full bg-teal-600 px-5 py-3 text-sm font-medium text-white shadow-lg transition-all hover:bg-teal-700 active:scale-95"
-            onClick={() => {
-              // TODO: Phase 3 — add expense with this friend
-            }}
+            onClick={() => navigate("/expenses/add", { state: { friendId: id } })}
           >
             <Receipt className="h-4 w-4" />
             Add expense
@@ -192,105 +184,6 @@ function ActionButton({
       <Icon className="h-4 w-4" />
       {label}
     </button>
-  );
-}
-
-function ExpenseRow({
-  description,
-  date,
-  category,
-  paidByName,
-  paidByAmount,
-  currency,
-  isSettlement,
-  myInvolvement,
-}: {
-  description: string;
-  date: number;
-  category?: string;
-  paidByName: string;
-  paidByAmount: number;
-  currency: string;
-  isSettlement: boolean;
-  myInvolvement: {
-    type: "borrowed" | "lent" | "settled_up" | "not_involved";
-    amount: number;
-  };
-}) {
-  const dateObj = new Date(date);
-  const dayNum = dateObj.getDate();
-  const monthShort = dateObj.toLocaleDateString("en", { month: "short" });
-
-  const CategoryIcon = isSettlement
-    ? HandCoins
-    : getCategoryIcon(category);
-
-  return (
-    <div className="flex items-center gap-3 px-4 py-3">
-      {/* Date column */}
-      <div className="w-8 shrink-0 text-center">
-        <p className="text-xs text-muted-foreground">{monthShort}</p>
-        <p className="text-lg font-semibold leading-tight">{dayNum}</p>
-      </div>
-
-      {/* Category icon */}
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
-        <CategoryIcon className="h-5 w-5 text-muted-foreground" />
-      </div>
-
-      {/* Description + payer */}
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">{description}</p>
-        <p className="text-xs text-muted-foreground">
-          {paidByName} paid {formatCurrency(paidByAmount, currency)}
-        </p>
-      </div>
-
-      {/* My involvement */}
-      <InvolvementLabel
-        type={myInvolvement.type}
-        amount={myInvolvement.amount}
-        currency={currency}
-      />
-    </div>
-  );
-}
-
-function InvolvementLabel({
-  type,
-  amount,
-  currency,
-}: {
-  type: "borrowed" | "lent" | "settled_up" | "not_involved";
-  amount: number;
-  currency: string;
-}) {
-  if (type === "settled_up" || type === "not_involved") {
-    return (
-      <span className="shrink-0 text-xs text-muted-foreground">
-        settled up
-      </span>
-    );
-  }
-
-  if (type === "lent") {
-    return (
-      <div className="shrink-0 text-right">
-        <p className="text-xs font-medium text-teal-600">you lent</p>
-        <p className="text-sm font-bold text-teal-600">
-          {formatCurrency(amount, currency)}
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="shrink-0 text-right">
-      <p className="text-xs font-medium text-orange-600">you borrowed</p>
-      <p className="text-sm font-bold text-orange-600">
-        {formatCurrency(amount, currency)}
-      </p>
-    </div>
   );
 }
 

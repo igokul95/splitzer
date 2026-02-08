@@ -16,6 +16,9 @@ import { FriendsPage } from "@/pages/FriendsPage";
 import { FriendDetailPage } from "@/pages/FriendDetailPage";
 import { ActivityPage } from "@/pages/ActivityPage";
 import { AccountPage } from "@/pages/AccountPage";
+import { AddExpensePage } from "@/pages/AddExpensePage";
+import { AddFriendPage } from "@/pages/AddFriendPage";
+import { SettleUpPage } from "@/pages/SettleUpPage";
 import { AuthGuard } from "@/components/layout/AuthGuard";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
@@ -92,6 +95,14 @@ export default function App() {
               }
             />
             <Route
+              path="/friends/add"
+              element={
+                <AuthGuard>
+                  <AddFriendPage />
+                </AuthGuard>
+              }
+            />
+            <Route
               path="/friends/:id"
               element={
                 <AuthGuard>
@@ -128,6 +139,24 @@ export default function App() {
               element={
                 <AuthGuard>
                   <AddContactPage />
+                </AuthGuard>
+              }
+            />
+
+            {/* Expense & Settlement routes (no bottom nav) */}
+            <Route
+              path="/expenses/add"
+              element={
+                <AuthGuard>
+                  <AddExpensePage />
+                </AuthGuard>
+              }
+            />
+            <Route
+              path="/settle"
+              element={
+                <AuthGuard>
+                  <SettleUpPage />
                 </AuthGuard>
               }
             />

@@ -1,6 +1,9 @@
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 import { formatCurrency } from "@/lib/format";
 import { Id } from "../../../convex/_generated/dataModel";
-import { ArrowRight } from "lucide-react";
+import { ExpenseRow } from "@/components/expenses/ExpenseRow";
+import { ArrowRight, Receipt } from "lucide-react";
 
 type Tab = "expenses" | "balances" | "totals";
 
@@ -163,14 +166,82 @@ export function TotalsTab({ memberCount, defaultCurrency }: TotalsTabProps) {
   );
 }
 
-// ─── Expenses Tab (empty state for now) ─────────────────────────────────────
+// ─── Expenses Tab ───────────────────────────────────────────────────────────
 
-export function ExpensesTab() {
+interface ExpensesTabProps {
+  groupId: Id<"groups">;
+}
+
+export function ExpensesTab({ groupId }: ExpensesTabProps) {
+  const expenses = useQuery(api.expenses.getGroupExpenses, { groupId });
+
+  if (expenses === undefined) {
+    return (
+      <div className="space-y-4 px-4 py-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="flex items-center gap-3">
+            <div className="h-10 w-8 animate-pulse rounded bg-muted" />
+            <div className="h-10 w-10 animate-pulse rounded-lg bg-muted" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 w-28 animate-pulse rounded bg-muted" />
+              <div className="h-3 w-36 animate-pulse rounded bg-muted" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (expenses.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 px-4 py-16">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+          <Receipt className="h-7 w-7 text-muted-foreground" />
+        </div>
+        <div className="text-center">
+          <p className="text-sm font-medium">No expenses yet</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Tap "Add expense" to get started.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Group expenses by month-year
+  const grouped: Record<string, typeof expenses> = {};
+  expenses.forEach((exp) => {
+    const key = new Date(exp.date).toLocaleDateString("en", {
+      month: "long",
+      year: "numeric",
+    });
+    (grouped[key] ||= []).push(exp);
+  });
+
   return (
-    <div className="py-12 text-center">
-      <p className="text-sm text-muted-foreground">
-        No expenses yet. Tap "Add expense" to get started.
-      </p>
+    <div>
+      {Object.entries(grouped).map(([monthYear, exps]) => (
+        <div key={monthYear}>
+          <h3 className="px-4 py-3 text-sm font-semibold text-foreground">
+            {monthYear}
+          </h3>
+          <div className="divide-y divide-border">
+            {exps.map((exp) => (
+              <ExpenseRow
+                key={exp._id}
+                description={exp.description}
+                date={exp.date}
+                category={exp.category}
+                paidByName={exp.paidByName}
+                paidByAmount={exp.paidByAmount}
+                currency={exp.currency}
+                isSettlement={exp.isSettlement}
+                myInvolvement={exp.myInvolvement}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

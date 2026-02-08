@@ -11,6 +11,13 @@ import {
   TotalsTab,
   ExpensesTab,
 } from "@/components/groups/GroupTabs";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { formatCurrency } from "@/lib/format";
 import { UserPlus, Link as LinkIcon, Receipt } from "lucide-react";
 
 type Tab = "expenses" | "balances" | "totals";
@@ -19,6 +26,7 @@ export function GroupDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>("expenses");
+  const [showSettleSheet, setShowSettleSheet] = useState(false);
 
   const group = useQuery(
     api.groups.getGroup,
@@ -41,6 +49,39 @@ export function GroupDetailPage() {
         <p className="text-sm text-muted-foreground">Group not found</p>
       </div>
     );
+  }
+
+  // Settle-up: find members with non-zero balances relative to the current user
+  const settleOptions = (group.myBalances ?? []).filter(
+    (b) => Math.abs(b.amount) > 0.005
+  );
+
+  function handleSettleMember(bal: {
+    userId: Id<"users">;
+    name: string;
+    amount: number;
+    currency: string;
+  }) {
+    if (!viewer) return;
+    // amount > 0 means they owe me (I'm the payee, they're the payer)
+    // amount < 0 means I owe them (I'm the payer, they're the payee)
+    const payerId = bal.amount < 0 ? viewer._id : bal.userId;
+    const payeeId = bal.amount < 0 ? bal.userId : viewer._id;
+    const payerName = bal.amount < 0 ? "You" : bal.name;
+    const payeeName = bal.amount < 0 ? bal.name : "You";
+
+    setShowSettleSheet(false);
+    navigate("/settle", {
+      state: {
+        payerId,
+        payeeId,
+        payerName,
+        payeeName,
+        amount: Math.abs(bal.amount),
+        currency: bal.currency,
+        groupId: id,
+      },
+    });
   }
 
   return (
@@ -71,13 +112,20 @@ export function GroupDetailPage() {
               activeTab={activeTab}
               onTabChange={setActiveTab}
               onSettleUp={() => {
-                // TODO: implement settle up in Phase 4
+                if (settleOptions.length === 0) return;
+                if (settleOptions.length === 1) {
+                  handleSettleMember(settleOptions[0]);
+                } else {
+                  setShowSettleSheet(true);
+                }
               }}
             />
 
             {/* Tab content */}
             <div className="pb-24">
-              {activeTab === "expenses" && <ExpensesTab />}
+              {activeTab === "expenses" && (
+                <ExpensesTab groupId={group._id} />
+              )}
               {activeTab === "balances" && viewer && (
                 <BalancesTab
                   balances={group.allBalances}
@@ -94,18 +142,56 @@ export function GroupDetailPage() {
           </>
         )}
 
-        {/* FAB — Add expense (disabled until Phase 3) */}
+        {/* FAB — Add expense */}
         <div className="fixed bottom-6 right-4 z-50 flex max-w-md flex-col items-end gap-2">
           <button
             className="flex items-center gap-2 rounded-full bg-teal-600 px-5 py-3 text-sm font-medium text-white shadow-lg transition-all hover:bg-teal-700 active:scale-95"
-            onClick={() => {
-              // TODO: Phase 3 — navigate to add expense
-            }}
+            onClick={() => navigate("/expenses/add", { state: { groupId: id } })}
           >
             <Receipt className="h-4 w-4" />
             Add expense
           </button>
         </div>
+
+        {/* Settle-up sheet */}
+        <Sheet open={showSettleSheet} onOpenChange={setShowSettleSheet}>
+          <SheetContent side="bottom" showCloseButton={false} className="rounded-t-2xl">
+            <SheetHeader>
+              <SheetTitle>Settle up</SheetTitle>
+            </SheetHeader>
+            <div className="max-h-[60vh] overflow-y-auto pb-4">
+              <p className="px-4 pb-3 text-sm text-muted-foreground">
+                Choose a balance to settle:
+              </p>
+              {settleOptions.map((bal) => (
+                <button
+                  key={bal.userId}
+                  onClick={() => handleSettleMember(bal)}
+                  className="flex w-full items-center gap-3 px-4 py-3 transition-colors hover:bg-muted"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-sm font-semibold">
+                    {bal.name[0]?.toUpperCase()}
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-sm font-medium">{bal.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {bal.amount > 0
+                        ? `owes you ${formatCurrency(bal.amount, bal.currency)}`
+                        : `you owe ${formatCurrency(Math.abs(bal.amount), bal.currency)}`}
+                    </p>
+                  </div>
+                  <span
+                    className={`text-sm font-bold ${
+                      bal.amount > 0 ? "text-teal-600" : "text-orange-600"
+                    }`}
+                  >
+                    {formatCurrency(Math.abs(bal.amount), bal.currency)}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
     </div>
   );

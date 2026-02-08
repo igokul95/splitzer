@@ -117,13 +117,86 @@
 - [x] Add `/friends/:id` route to `App.tsx`
 
 ## Phase 3: Expenses & Splits
-_Coming next_
+
+### 1. Split Computation Library (`src/lib/splits.ts`)
+- [x] `computeEqualSplit` — divides total equally among included participants, handles remainder
+- [x] `computeExactSplit` — user-specified exact amounts per person
+- [x] `computePercentageSplit` — percentage-based splits (must sum to 100%)
+- [x] `computeSharesSplit` — share-ratio based splits
+- [x] Remainder distribution logic (rounding to 2 decimal places)
+
+### 2. Expense Backend (`convex/expenses.ts`)
+- [x] `expenses.addExpense` — mutation: creates expense + expenseSplits, validates totals, updates balances, logs activity
+- [x] `expenses.deleteExpense` — mutation: soft-deletes expense, recalculates balances, logs activity
+- [x] `expenses.getGroupExpenses` — query: returns all expenses for a group with user involvement info (lent/borrowed/settled)
+
+### 3. Add Expense UI (`src/pages/AddExpensePage.tsx`)
+- [x] Full expense creation form: description, amount, currency, category, date, notes
+- [x] Payer selection sheet (single payer)
+- [x] Split method selector (Equal / Exact / Percentage / Shares) with interactive panels
+- [x] Category picker with icons (General, Food, Transport, Housing, Utilities, Entertainment, Shopping)
+- [x] Context-aware: works with group (loads members) or friend (2-person list)
+- [x] Friend/group selection screen when opened without context (Recent friends + Groups list with search)
+
+### 4. Expense Row Component (`src/components/expenses/ExpenseRow.tsx`)
+- [x] Displays expense with date, category icon, description, payer info
+- [x] Color-coded involvement labels (you lent / you borrowed / settled up)
+- [x] Reusable across group detail and friend detail pages
+
+### 5. Route
+- [x] Add `/expenses/add` route to `App.tsx`
+
+---
 
 ## Phase 4: Balances & Settlements
-_Coming next_
+
+### 1. Balance Engine (`convex/balances.ts`)
+- [x] `updateBalancesForExpense` — updates all affected user pairs after expense write/delete
+- [x] `recalcContextBalance` — recalculates balance between two users in a specific context (group or non-group)
+- [x] `recalcFriendBalance` — aggregates all context balances for a user pair into friendBalances table
+- [x] Canonical pair ordering (`user1 < user2`) consistently applied
+- [x] Proportional attribution for multi-payer scenarios
+
+### 2. Settlement Backend (`convex/expenses.ts`)
+- [x] `expenses.settleUp` — mutation: records settlement as expense with `isSettlement: true`, updates balances, logs activity
+
+### 3. Settle Up UI (`src/pages/SettleUpPage.tsx`)
+- [x] Visual payer → payee flow with avatars
+- [x] Amount input pre-filled from balance (editable for partial settlements)
+- [x] Group or non-group settlement support
+- [x] Context info text ("records a payment that happened outside app")
+
+### 4. Balance Display Components
+- [x] `BalanceSummary.tsx` — user's net balance in a group with color coding
+- [x] `GroupTabs.tsx` — Balances tab (all pairwise balances), Totals tab (group spending summary), Expenses tab (timeline by month)
+
+### 5. Routes
+- [x] Add `/settle-up` route to `App.tsx`
+
+---
 
 ## Phase 5: Activity Feed
-_Coming next_
+
+### 1. Activity Backend (`convex/activities.ts`)
+- [x] `activities.getMyActivities` — query: aggregates activities from all groups + non-group, top 100 sorted by time, enriched with actor/group names
+
+### 2. Activity Logging Integration
+- [x] `expense_added` — logged in `addExpense` with splitSummary
+- [x] `expense_deleted` — logged in `deleteExpense`
+- [x] `settlement` — logged in `settleUp`
+- [x] `group_created` — logged in `createGroup`
+- [x] `group_updated` — logged in `updateGroup`
+- [x] `member_added` — logged in `addMember`
+- [x] `member_removed` — logged in `removeMember` and `leaveGroup`
+
+### 3. Activity Page UI (`src/pages/ActivityPage.tsx`)
+- [x] Full activity feed with month-year grouping
+- [x] Activity type rendering: expense_added, expense_deleted, settlement, member_added, member_removed, group_created, group_updated, expense_updated
+- [x] Personalized involvement text with color coding (you owe / you get back)
+- [x] Relative time display (just now, Xm ago, Xh ago, Xd ago, date)
+- [x] Avatar display with initials fallback
+- [x] Empty state and loading skeleton
+- [x] FAB to add expense
 
 ## Phase 6: Currency Support
 _Coming next_

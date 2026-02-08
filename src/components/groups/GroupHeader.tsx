@@ -21,7 +21,7 @@ export function GroupHeader({
       {/* Top bar */}
       <div className="flex items-center justify-between py-3">
         <button
-          onClick={() => navigate("/groups")}
+          onClick={() => navigate(-1)}
           className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-white transition-colors hover:bg-white/30"
         >
           <ChevronLeft className="h-5 w-5" />

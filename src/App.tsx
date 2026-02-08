@@ -14,6 +14,7 @@ import { CreateAddMembersPage } from "@/pages/CreateAddMembersPage";
 import { CreateAddContactPage } from "@/pages/CreateAddContactPage";
 import { FriendsPage } from "@/pages/FriendsPage";
 import { FriendDetailPage } from "@/pages/FriendDetailPage";
+import { FriendSettingsPage } from "@/pages/FriendSettingsPage";
 import { ActivityPage } from "@/pages/ActivityPage";
 import { AccountPage } from "@/pages/AccountPage";
 import { AddExpensePage } from "@/pages/AddExpensePage";
@@ -107,6 +108,14 @@ export default function App() {
               element={
                 <AuthGuard>
                   <FriendDetailPage />
+                </AuthGuard>
+              }
+            />
+            <Route
+              path="/friends/:id/settings"
+              element={
+                <AuthGuard>
+                  <FriendSettingsPage />
                 </AuthGuard>
               }
             />

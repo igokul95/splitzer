@@ -65,7 +65,7 @@ export function FriendCard({
   currency,
   groupBreakdowns,
 }: FriendCardProps) {
-  const hasMultipleGroups = groupBreakdowns.length > 1;
+  const hasGroupBreakdowns = groupBreakdowns.length > 0;
 
   return (
     <Link
@@ -97,7 +97,7 @@ export function FriendCard({
         </div>
 
         {/* Per-group breakdowns (shown when multiple groups have balances) */}
-        {hasMultipleGroups && (
+        {hasGroupBreakdowns && (
           <div className="mt-1 space-y-0.5">
             {groupBreakdowns.map((gb, i) => (
               <GroupBreakdownLine

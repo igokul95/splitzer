@@ -218,44 +218,84 @@ export const getFriendDetail = query({
         : -friendBalance.totalAmount
       : 0;
 
-    // Get per-group breakdowns
+    // Get per-group breakdowns from balances table
     const pairBalances = await ctx.db
       .query("balances")
       .withIndex("by_pair", (q) => q.eq("user1", u1).eq("user2", u2))
       .collect();
 
-    const groupBreakdowns: {
-      groupId: Id<"groups"> | undefined;
+    // Build a map of groupId -> balance for quick lookup
+    const groupBalanceMap = new Map<string, { amount: number; currency: string }>();
+    for (const bal of pairBalances) {
+      const balNet = u1 === me._id ? bal.amount : -bal.amount;
+      const key = bal.groupId ?? "__non_group__";
+      groupBalanceMap.set(key, { amount: balNet, currency: bal.currency });
+    }
+
+    // Get ALL shared groups (both users are members, not just groups with balances)
+    const myMemberships = await ctx.db
+      .query("groupMembers")
+      .withIndex("by_user", (q) => q.eq("userId", me._id))
+      .collect();
+    const friendMemberships = await ctx.db
+      .query("groupMembers")
+      .withIndex("by_user", (q) => q.eq("userId", args.friendId))
+      .collect();
+
+    const myGroupIds = new Set(myMemberships.map((m) => m.groupId as string));
+    const sharedGroupIds = friendMemberships
+      .filter((m) => myGroupIds.has(m.groupId as string))
+      .map((m) => m.groupId);
+    // Deduplicate
+    const uniqueSharedGroupIds = [...new Set(sharedGroupIds)];
+
+    const sharedGroups: {
+      groupId: Id<"groups">;
       groupName: string;
       amount: number;
       currency: string;
     }[] = [];
 
-    for (const bal of pairBalances) {
-      if (Math.abs(bal.amount) < 0.005) continue;
-      const balNet = u1 === me._id ? bal.amount : -bal.amount;
-      let groupName = "Non-group";
-      if (bal.groupId) {
-        const group = await ctx.db.get(bal.groupId);
-        groupName = group?.name ?? "Deleted group";
-      }
-      groupBreakdowns.push({
-        groupId: bal.groupId,
-        groupName,
-        amount: balNet,
-        currency: bal.currency,
+    for (const gId of uniqueSharedGroupIds) {
+      const group = await ctx.db.get(gId);
+      if (!group) continue;
+      const bal = groupBalanceMap.get(gId as string);
+      sharedGroups.push({
+        groupId: gId,
+        groupName: group.name,
+        amount: bal?.amount ?? 0,
+        currency: bal?.currency ?? me.defaultCurrency,
       });
     }
 
-    // Get shared expenses: find expenses where both me and friend have splits
-    // First, get all of the friend's splits
+    // groupBreakdowns for backward compat (only non-zero balances)
+    const groupBreakdowns = sharedGroups
+      .filter((g) => Math.abs(g.amount) > 0.005)
+      .map((g) => ({
+        groupId: g.groupId as Id<"groups"> | undefined,
+        groupName: g.groupName,
+        amount: g.amount,
+        currency: g.currency,
+      }));
+
+    // Also include non-group balance if it exists
+    const nonGroupBal = groupBalanceMap.get("__non_group__");
+    if (nonGroupBal && Math.abs(nonGroupBal.amount) > 0.005) {
+      groupBreakdowns.push({
+        groupId: undefined,
+        groupName: "Non-group",
+        amount: nonGroupBal.amount,
+        currency: nonGroupBal.currency,
+      });
+    }
+
+    // Get non-group shared expenses only (expenses where both users have splits and no groupId)
     const friendSplits = await ctx.db
       .query("expenseSplits")
       .withIndex("by_user", (q) => q.eq("userId", args.friendId))
       .collect();
 
-    // For each, check if I also have a split on the same expense
-    const sharedExpenses: {
+    const nonGroupExpenses: {
       _id: Id<"expenses">;
       description: string;
       totalAmount: number;
@@ -276,7 +316,6 @@ export const getFriendDetail = query({
     for (const fSplit of friendSplits) {
       if (seenExpenseIds.has(fSplit.expenseId)) continue;
 
-      // Check if I have a split on this expense
       const mySplit = await ctx.db
         .query("expenseSplits")
         .withIndex("by_user_expense", (q) =>
@@ -287,18 +326,18 @@ export const getFriendDetail = query({
       if (!mySplit) continue;
       seenExpenseIds.add(fSplit.expenseId);
 
-      // Get the expense details
       const expense = await ctx.db.get(fSplit.expenseId);
       if (!expense || expense.isDeleted) continue;
 
-      // Determine who paid
+      // Only include non-group expenses as individual items
+      if (expense.groupId) continue;
+
       const payer = await ctx.db.get(expense.paidBy);
       const paidByName =
         expense.paidBy === me._id
           ? "You"
           : payer?.name ?? "Unknown";
 
-      // Determine my involvement: net = paidAmount - owedAmount
       const myNet = mySplit.paidAmount - mySplit.owedAmount;
       let myInvolvement: {
         type: "borrowed" | "lent" | "settled_up" | "not_involved";
@@ -313,7 +352,7 @@ export const getFriendDetail = query({
         myInvolvement = { type: "borrowed", amount: Math.abs(myNet) };
       }
 
-      sharedExpenses.push({
+      nonGroupExpenses.push({
         _id: expense._id,
         description: expense.description,
         totalAmount: expense.totalAmount,
@@ -327,8 +366,7 @@ export const getFriendDetail = query({
       });
     }
 
-    // Sort expenses by date descending
-    sharedExpenses.sort((a, b) => b.date - a.date);
+    nonGroupExpenses.sort((a, b) => b.date - a.date);
 
     // Abbreviate friend name for display (e.g. "Abin Benny" -> "Abin B.")
     const nameParts = friend.name.split(" ");
@@ -352,7 +390,8 @@ export const getFriendDetail = query({
       groupBreakdowns: groupBreakdowns.sort(
         (a, b) => Math.abs(b.amount) - Math.abs(a.amount)
       ),
-      sharedExpenses,
+      sharedGroups: sharedGroups.sort((a, b) => a.groupName.localeCompare(b.groupName)),
+      nonGroupExpenses,
     };
   },
 });

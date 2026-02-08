@@ -3,6 +3,7 @@ import { ChevronLeft, Settings } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 
 interface FriendHeaderProps {
+  friendId: string;
   name: string;
   shortName: string;
   avatarUrl?: string;
@@ -41,6 +42,7 @@ function getInitials(name: string): string {
 }
 
 export function FriendHeader({
+  friendId,
   name,
   shortName,
   avatarUrl,
@@ -71,9 +73,7 @@ export function FriendHeader({
         </button>
         <button
           className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-white transition-colors hover:bg-white/30"
-          onClick={() => {
-            // TODO: Friend settings (Phase 5+)
-          }}
+          onClick={() => navigate(`/friends/${friendId}/settings`)}
         >
           <Settings className="h-5 w-5" />
         </button>

@@ -68,7 +68,7 @@ export const getMyActivities = query({
             (s) => s.userId === me._id
           );
           if (mySplit) {
-            myAmount = mySplit.amount; // negative = I owe, positive = I'm owed
+            myAmount = mySplit.amount; // amount = owedAmount - paidAmount: negative = I'm owed, positive = I owe
           }
         }
 

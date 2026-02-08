@@ -130,12 +130,13 @@ function getActivityDisplay(item: ActivityItem): {
 
       if (myAmount !== undefined && Math.abs(myAmount) > 0.005) {
         const currency = metadata?.currency ?? "INR";
-        if (myAmount < 0) {
-          // I owe (negative = my owedAmount > paidAmount)
-          involvementText = `You owe ${formatCurrency(Math.abs(myAmount), currency)}`;
+        if (myAmount > 0) {
+          // Positive = owedAmount > paidAmount = I owe
+          involvementText = `You owe ${formatCurrency(myAmount, currency)}`;
           involvementColor = "text-orange-600";
         } else {
-          involvementText = `You get back ${formatCurrency(myAmount, currency)}`;
+          // Negative = paidAmount > owedAmount = I'm owed
+          involvementText = `You get back ${formatCurrency(Math.abs(myAmount), currency)}`;
           involvementColor = "text-teal-600";
         }
       }

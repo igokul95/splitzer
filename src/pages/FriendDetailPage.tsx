@@ -15,6 +15,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { ExpenseFab } from "@/components/expenses/ExpenseFab";
+import { BottomNav } from "@/components/layout/BottomNav";
 
 export function FriendDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -54,7 +55,7 @@ export function FriendDetailPage() {
   console.log("non group expenses", data.nonGroupExpenses);
   return (
     <div className="min-h-dvh bg-background">
-      <div className="mx-auto w-full max-w-md">
+      <div className="mx-auto w-full max-w-md pb-16">
         {/* Hero header */}
         <FriendHeader
           friendId={id}
@@ -176,8 +177,10 @@ export function FriendDetailPage() {
         </div>
 
         {/* FAB */}
-        <ExpenseFab position="detail" locationState={{ friendId: id! }} />
+        <ExpenseFab position="tabbed" locationState={{ friendId: id! }} />
       </div>
+
+      <BottomNav />
 
       <ExpenseDetailSheet
         expenseId={selectedExpenseId}
@@ -241,7 +244,7 @@ function ExpenseEmptyState({ friendName }: { friendName: string }) {
 function LoadingSkeleton() {
   return (
     <div className="min-h-dvh bg-background">
-      <div className="mx-auto w-full max-w-md">
+      <div className="mx-auto w-full max-w-md pb-16">
         <div className="bg-brand-dark px-4 pb-6 pt-[env(safe-area-inset-top)]">
           <div className="flex items-center justify-between py-3">
             <div className="h-9 w-9 animate-pulse rounded-full bg-white/20" />
@@ -276,6 +279,7 @@ function LoadingSkeleton() {
           ))}
         </div>
       </div>
+      <BottomNav />
     </div>
   );
 }

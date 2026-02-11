@@ -20,6 +20,7 @@ import {
 import { formatCurrency } from "@/lib/format";
 import { UserPlus, Link as LinkIcon } from "lucide-react";
 import { ExpenseFab } from "@/components/expenses/ExpenseFab";
+import { BottomNav } from "@/components/layout/BottomNav";
 
 type Tab = "expenses" | "balances" | "totals";
 
@@ -87,7 +88,7 @@ export function GroupDetailPage() {
 
   return (
     <div className="min-h-dvh bg-background">
-      <div className="mx-auto w-full max-w-md">
+      <div className="mx-auto w-full max-w-md pb-16">
         {/* Hero header */}
         <GroupHeader
           groupId={group._id}
@@ -144,7 +145,7 @@ export function GroupDetailPage() {
         )}
 
         {/* FAB */}
-        <ExpenseFab position="detail" locationState={{ groupId: id }} />
+        <ExpenseFab position="tabbed" locationState={{ groupId: id }} />
 
         {/* Settle-up sheet */}
         <Sheet open={showSettleSheet} onOpenChange={setShowSettleSheet}>
@@ -186,6 +187,8 @@ export function GroupDetailPage() {
           </SheetContent>
         </Sheet>
       </div>
+
+      <BottomNav />
     </div>
   );
 }
@@ -218,7 +221,7 @@ function SoloMemberCard({ groupId }: { groupId: string }) {
 function LoadingSkeleton() {
   return (
     <div className="min-h-dvh bg-background">
-      <div className="mx-auto w-full max-w-md">
+      <div className="mx-auto w-full max-w-md pb-16">
         {/* Hero skeleton */}
         <div className="bg-brand-dark px-4 pb-6 pt-[env(safe-area-inset-top)]">
           <div className="flex items-center justify-between py-3">
@@ -244,6 +247,7 @@ function LoadingSkeleton() {
           </div>
         </div>
       </div>
+      <BottomNav />
     </div>
   );
 }

@@ -1,5 +1,13 @@
 "use node";
 
+// Minimal declaration to satisfy TypeScript without pulling in full @types/node.
+declare const process: {
+  env: {
+    OPENROUTER_API_KEY?: string;
+    [key: string]: string | undefined;
+  };
+};
+
 import { action } from "./_generated/server";
 import { v } from "convex/values";
 

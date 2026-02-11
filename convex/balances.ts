@@ -39,7 +39,6 @@ export const recalcAllBalances = internalMutation({
 export async function updateBalancesForExpense(
   ctx: MutationCtx,
   groupId: Id<"groups"> | undefined,
-  currency: string,
   splits: { userId: Id<"users">; paidAmount: number; owedAmount: number }[]
 ) {
   // Collect unique user IDs from the splits

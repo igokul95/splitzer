@@ -97,7 +97,7 @@ export const addExpense = mutation({
     }
 
     // Update balances
-    await updateBalancesForExpense(ctx, args.groupId, args.currency, args.splits);
+    await updateBalancesForExpense(ctx, args.groupId, args.splits);
 
     // Log activity
     const payer = await ctx.db.get(args.paidBy);
@@ -157,7 +157,6 @@ export const deleteExpense = mutation({
     await updateBalancesForExpense(
       ctx,
       expense.groupId,
-      expense.currency,
       splits.map((s) => ({
         userId: s.userId,
         paidAmount: s.paidAmount,
@@ -229,7 +228,7 @@ export const settleUp = mutation({
       });
     }
 
-    await updateBalancesForExpense(ctx, args.groupId, args.currency, splits);
+    await updateBalancesForExpense(ctx, args.groupId, splits);
 
     // Log activity
     await ctx.db.insert("activities", {

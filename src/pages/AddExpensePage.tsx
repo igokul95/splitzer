@@ -29,7 +29,6 @@ import {
   ShoppingCart,
   Check,
   Users,
-  Search,
   Plane,
   Heart,
   LayoutGrid,

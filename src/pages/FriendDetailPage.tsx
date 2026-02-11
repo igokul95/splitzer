@@ -16,6 +16,12 @@ import {
 } from "lucide-react";
 import { ExpenseFab } from "@/components/expenses/ExpenseFab";
 import { BottomNav } from "@/components/layout/BottomNav";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 export function FriendDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -28,6 +34,7 @@ export function FriendDetailPage() {
   );
 
   const [selectedExpenseId, setSelectedExpenseId] = useState<Id<"expenses"> | null>(null);
+  const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
 
   if (!id) {
     navigate("/friends");
@@ -52,18 +59,48 @@ export function FriendDetailPage() {
   const hasNonGroupExpenses = data.nonGroupExpenses.length > 0;
   const isEmpty = !hasGroups && !hasNonGroupExpenses;
 
+  // Compute per-currency net totals across all sources (group + nonGroup)
+  const currencyTotals: Array<{ currency: string; net: number }> = [];
+  {
+    const map = new Map<string, number>();
+    for (const b of data.balancesByCurrency) {
+      map.set(b.currency, (map.get(b.currency) ?? 0) + b.net);
+    }
+    for (const [currency, net] of map) {
+      if (Math.abs(net) >= 0.005) {
+        currencyTotals.push({ currency, net });
+      }
+    }
+  }
+
+  function navigateToSettle(currency: string, net: number) {
+    if (!viewer || !data) return;
+    const payerId = net < 0 ? viewer._id : data.friend._id;
+    const payeeId = net < 0 ? data.friend._id : viewer._id;
+    const payerName = net < 0 ? "You" : data.friend.name;
+    const payeeName = net < 0 ? data.friend.name : "You";
+    navigate("/settle", {
+      state: {
+        payerId,
+        payeeId,
+        payerName,
+        payeeName,
+        amount: Math.abs(net),
+        currency,
+      },
+    });
+  }
+
   return (
     <div className="min-h-dvh bg-background">
       <div className="mx-auto w-full max-w-md pb-16">
-        {/* Hero header */}
+        {/* Hero header with balance summary */}
         <FriendHeader
           friendId={id}
           name={data.friend.name}
           avatarUrl={data.friend.avatarUrl}
+          {...buildBalanceLines(data.balancesByCurrency, data.friend.shortName)}
         />
-
-        {/* Balance summary */}
-        <BalanceSummary balances={data.balancesByCurrency} shortName={data.friend.shortName} />
 
         {/* Action buttons */}
         <div className="flex gap-2 overflow-x-auto px-4 py-4 scrollbar-hide">
@@ -72,21 +109,12 @@ export function FriendDetailPage() {
             icon={HandCoins}
             variant="primary"
             onClick={() => {
-              if (!viewer || !data || Math.abs(data.overallNet) < 0.005) return;
-              const payerId = data.overallNet < 0 ? viewer._id : data.friend._id;
-              const payeeId = data.overallNet < 0 ? data.friend._id : viewer._id;
-              const payerName = data.overallNet < 0 ? "You" : data.friend.name;
-              const payeeName = data.overallNet < 0 ? data.friend.name : "You";
-              navigate("/settle", {
-                state: {
-                  payerId,
-                  payeeId,
-                  payerName,
-                  payeeName,
-                  amount: Math.abs(data.overallNet),
-                  currency: data.currency,
-                },
-              });
+              if (!viewer || !data || currencyTotals.length === 0) return;
+              if (currencyTotals.length === 1) {
+                navigateToSettle(currencyTotals[0].currency, currencyTotals[0].net);
+              } else {
+                setShowCurrencyPicker(true);
+              }
             }}
           />
         </div>
@@ -186,6 +214,39 @@ export function FriendDetailPage() {
         expenseId={selectedExpenseId}
         onClose={() => setSelectedExpenseId(null)}
       />
+
+      {/* Currency picker for multi-currency settle up */}
+      <Sheet open={showCurrencyPicker} onOpenChange={setShowCurrencyPicker}>
+        <SheetContent side="bottom" className="rounded-t-2xl">
+          <SheetHeader>
+            <SheetTitle>Which balance do you want to settle?</SheetTitle>
+          </SheetHeader>
+          <div className="space-y-2 pb-4 pt-2">
+            {currencyTotals.map((ct) => (
+              <button
+                key={ct.currency}
+                className="flex w-full items-center justify-between rounded-lg border border-border px-4 py-3 transition-colors hover:bg-muted active:bg-muted"
+                onClick={() => {
+                  setShowCurrencyPicker(false);
+                  navigateToSettle(ct.currency, ct.net);
+                }}
+              >
+                <div className="text-left">
+                  <p className="text-sm font-medium text-foreground">{ct.currency}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {ct.net > 0
+                      ? `${data?.friend.shortName} owes you`
+                      : `You owe ${data?.friend.shortName}`}
+                  </p>
+                </div>
+                <span className={`text-sm font-bold ${ct.net > 0 ? "text-positive" : "text-negative"}`}>
+                  {formatCurrency(Math.abs(ct.net), ct.currency)}
+                </span>
+              </button>
+            ))}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
@@ -241,14 +302,26 @@ function ExpenseEmptyState({ friendName }: { friendName: string }) {
   );
 }
 
-function BalanceSummary({
-  balances,
-  shortName,
-}: {
-  balances: Array<{ source: "group" | "nonGroup"; net: number; currency: string }>;
-  shortName: string;
-}) {
-  // Build balance lines — one line per (source, direction), multi-currency joined with " + "
+function buildBalanceLines(
+  balances: Array<{ source: "group" | "nonGroup"; net: number; currency: string }>,
+  shortName: string,
+) {
+  // Total net per currency across all sources
+  const totalMap = new Map<string, number>();
+  for (const b of balances) {
+    totalMap.set(b.currency, (totalMap.get(b.currency) ?? 0) + b.net);
+  }
+
+  const totalLines: Array<{ amount: string; direction: "owed" | "owe" }> = [];
+  for (const [currency, net] of totalMap) {
+    if (Math.abs(net) < 0.005) continue;
+    totalLines.push({
+      amount: formatCurrency(Math.abs(net), currency),
+      direction: net > 0 ? "owed" : "owe",
+    });
+  }
+
+  // Per-source breakdown
   const lineMap = new Map<string, { amounts: string[]; direction: "owed" | "owe"; source: "group" | "nonGroup" }>();
   for (const b of balances) {
     const direction = b.net > 0 ? "owed" : "owe";
@@ -272,25 +345,7 @@ function BalanceSummary({
     }
   }
 
-  if (balanceLines.length === 0) {
-    return (
-      <p className="px-4 pt-3 text-sm text-muted-foreground">All settled up</p>
-    );
-  }
-
-  return (
-    <div className="space-y-0.5 px-4 pt-3">
-      {balanceLines.map((line, i) => (
-        <p key={i} className="text-sm text-muted-foreground">
-          {line.prefix}
-          <span className={`font-bold ${line.direction === "owed" ? "text-positive" : "text-negative"}`}>
-            {line.amount}
-          </span>
-          {line.suffix}
-        </p>
-      ))}
-    </div>
-  );
+  return { balanceLines, totalLines, settled: totalLines.length === 0 };
 }
 
 function LoadingSkeleton() {

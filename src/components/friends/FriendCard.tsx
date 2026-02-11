@@ -18,21 +18,21 @@ interface FriendCardProps {
   groupBreakdowns: GroupBreakdown[];
 }
 
-// Stable avatar colors derived from name
+// Brand-harmonious pastel avatars — all within the blue family of #2979FF
 const AVATAR_COLORS = [
-  "bg-teal-500",
-  "bg-orange-500",
-  "bg-purple-500",
-  "bg-pink-500",
-  "bg-blue-500",
-  "bg-emerald-500",
-  "bg-rose-500",
-  "bg-amber-500",
-  "bg-indigo-500",
-  "bg-cyan-500",
+  { bg: "bg-blue-100", text: "text-blue-700" },
+  { bg: "bg-sky-100", text: "text-sky-700" },
+  { bg: "bg-indigo-100", text: "text-indigo-700" },
+  { bg: "bg-cyan-100", text: "text-cyan-700" },
+  { bg: "bg-violet-100", text: "text-violet-700" },
+  { bg: "bg-blue-50", text: "text-blue-600" },
+  { bg: "bg-sky-50", text: "text-sky-600" },
+  { bg: "bg-indigo-50", text: "text-indigo-600" },
+  { bg: "bg-cyan-50", text: "text-cyan-600" },
+  { bg: "bg-violet-50", text: "text-violet-600" },
 ];
 
-function getAvatarColor(name: string): string {
+function getAvatarColor(name: string) {
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -82,7 +82,7 @@ export function FriendCard({
           />
         ) : (
           <div
-            className={`flex h-11 w-11 items-center justify-center rounded-full text-sm font-semibold text-white ${getAvatarColor(name)}`}
+            className={`flex h-11 w-11 items-center justify-center rounded-full text-sm font-semibold ${getAvatarColor(name).bg} ${getAvatarColor(name).text}`}
           >
             {getInitials(name)}
           </div>

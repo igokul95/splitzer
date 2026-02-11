@@ -14,6 +14,7 @@ import type * as expenses from "../expenses.js";
 import type * as friends from "../friends.js";
 import type * as groups from "../groups.js";
 import type * as helpers from "../helpers.js";
+import type * as receipts from "../receipts.js";
 import type * as users from "../users.js";
 
 import type {
@@ -29,6 +30,7 @@ declare const fullApi: ApiFromModules<{
   friends: typeof friends;
   groups: typeof groups;
   helpers: typeof helpers;
+  receipts: typeof receipts;
   users: typeof users;
 }>;
 

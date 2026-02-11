@@ -39,6 +39,12 @@ type SplitMethod = "equal" | "exact" | "percentage" | "shares";
 interface LocationState {
   groupId?: string;
   friendId?: string;
+  receiptData?: {
+    amount: number;
+    currency: string;
+    date: string;
+    description: string;
+  };
 }
 
 const CATEGORIES = [
@@ -109,13 +115,19 @@ export function AddExpensePage() {
   );
   const [selectionSearch, setSelectionSearch] = useState("");
 
-  // Form state
-  const [description, setDescription] = useState("");
-  const [amountStr, setAmountStr] = useState("");
-  const [currency, setCurrency] = useState<string | null>(null);
+  // Form state (prefill from receipt data if available)
+  const [description, setDescription] = useState(
+    state.receiptData?.description ?? ""
+  );
+  const [amountStr, setAmountStr] = useState(
+    state.receiptData?.amount ? String(state.receiptData.amount) : ""
+  );
+  const [currency, setCurrency] = useState<string | null>(
+    state.receiptData?.currency ?? null
+  );
   const [category, setCategory] = useState("general");
   const [date, setDate] = useState(
-    new Date().toISOString().split("T")[0]
+    state.receiptData?.date ?? new Date().toISOString().split("T")[0]
   );
   const [notes, setNotes] = useState("");
   const [splitMethod, setSplitMethod] = useState<SplitMethod>("equal");

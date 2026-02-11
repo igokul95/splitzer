@@ -14,6 +14,7 @@ import {
   ChevronRight,
   CheckCircle2,
 } from "lucide-react";
+import { ExpenseFab } from "@/components/expenses/ExpenseFab";
 
 export function FriendDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -174,16 +175,8 @@ export function FriendDetailPage() {
           )}
         </div>
 
-        {/* FAB — Add expense */}
-        <div className="fixed bottom-6 right-4 z-50 flex max-w-md flex-col items-end gap-2">
-          <button
-            className="flex items-center gap-2 rounded-full bg-teal-600 px-5 py-3 text-sm font-medium text-white shadow-lg transition-all hover:bg-teal-700 active:scale-95"
-            onClick={() => navigate("/expenses/add", { state: { friendId: id } })}
-          >
-            <Receipt className="h-4 w-4" />
-            Add expense
-          </button>
-        </div>
+        {/* FAB */}
+        <ExpenseFab position="detail" locationState={{ friendId: id! }} />
       </div>
 
       <ExpenseDetailSheet

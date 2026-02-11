@@ -76,7 +76,7 @@ function ActivityItemRow({ item }: { item: ActivityItem }) {
   return (
     <div className="flex items-start gap-3 py-3">
       {/* Avatar */}
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-100 text-sm font-semibold text-teal-700">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-light text-sm font-semibold text-brand-dark">
         {item.actorAvatarUrl ? (
           <img
             src={item.actorAvatarUrl}
@@ -122,11 +122,11 @@ function getActivityDisplay(item: ActivityItem): {
         if (myAmount > 0) {
           // Positive = owedAmount > paidAmount = I owe
           involvementText = `You owe ${formatCurrency(myAmount, currency)}`;
-          involvementColor = "text-orange-600";
+          involvementColor = "text-negative";
         } else {
           // Negative = paidAmount > owedAmount = I'm owed
           involvementText = `You get back ${formatCurrency(Math.abs(myAmount), currency)}`;
-          involvementColor = "text-teal-600";
+          involvementColor = "text-positive";
         }
       }
 

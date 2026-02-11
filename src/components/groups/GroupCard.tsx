@@ -29,7 +29,7 @@ const TYPE_ICONS = {
 
 const TYPE_COLORS = {
   trip: "bg-orange-500",
-  home: "bg-teal-600",
+  home: "bg-brand",
   couple: "bg-pink-500",
   other: "bg-gray-500",
 };
@@ -109,8 +109,8 @@ function BalanceLabel({
   if (amount > 0) {
     return (
       <div className="shrink-0 text-right">
-        <p className="text-xs font-medium text-teal-600">you are owed</p>
-        <p className="text-sm font-bold text-teal-600">
+        <p className="text-xs font-medium text-positive">you are owed</p>
+        <p className="text-sm font-bold text-positive">
           {formatCurrency(amount, currency)}
         </p>
       </div>
@@ -119,8 +119,8 @@ function BalanceLabel({
 
   return (
     <div className="shrink-0 text-right">
-      <p className="text-xs font-medium text-orange-600">you owe</p>
-      <p className="text-sm font-bold text-orange-600">
+      <p className="text-xs font-medium text-negative">you owe</p>
+      <p className="text-sm font-bold text-negative">
         {formatCurrency(amount, currency)}
       </p>
     </div>
@@ -140,7 +140,7 @@ function MemberBalanceLine({
     return (
       <p className="text-xs text-muted-foreground">
         {name} owes you{" "}
-        <span className="text-teal-600">{formatCurrency(amount, currency)}</span>
+        <span className="text-positive">{formatCurrency(amount, currency)}</span>
       </p>
     );
   }
@@ -148,7 +148,7 @@ function MemberBalanceLine({
   return (
     <p className="text-xs text-muted-foreground">
       You owe {name}{" "}
-      <span className="text-orange-600">
+      <span className="text-negative">
         {formatCurrency(amount, currency)}
       </span>
     </p>

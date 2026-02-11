@@ -80,7 +80,7 @@ export function SettleUpPage() {
         {/* Payer → Payee visual */}
         <div className="flex items-center justify-center gap-6 px-4 py-8">
           <div className="flex flex-col items-center gap-2">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-teal-100 text-xl font-bold text-teal-700">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-light text-xl font-bold text-brand-dark">
               {state.payerName[0]?.toUpperCase()}
             </div>
             <span className="text-sm font-medium">{state.payerName}</span>
@@ -89,7 +89,7 @@ export function SettleUpPage() {
           <ArrowRight className="h-6 w-6 text-muted-foreground" />
 
           <div className="flex flex-col items-center gap-2">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-orange-100 text-xl font-bold text-orange-700">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-negative-light text-xl font-bold text-negative-dark">
               {state.payeeName[0]?.toUpperCase()}
             </div>
             <span className="text-sm font-medium">{state.payeeName}</span>
@@ -122,7 +122,7 @@ export function SettleUpPage() {
               min="0"
               value={amountStr}
               onChange={(e) => setAmountStr(e.target.value)}
-              className="w-full rounded-xl border-2 border-border bg-background py-4 pl-12 pr-4 text-center text-3xl font-bold focus:border-teal-600 focus:outline-none"
+              className="w-full rounded-xl border-2 border-border bg-background py-4 pl-12 pr-4 text-center text-3xl font-bold focus:border-brand focus:outline-none"
             />
           </div>
         </div>
@@ -140,7 +140,7 @@ export function SettleUpPage() {
             <button
               onClick={handleRecord}
               disabled={amount <= 0 || saving}
-              className="w-full rounded-full bg-teal-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-teal-700 disabled:bg-muted disabled:text-muted-foreground"
+              className="w-full rounded-full bg-brand py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-hover disabled:bg-muted disabled:text-muted-foreground"
             >
               {saving ? "Recording..." : "Record payment"}
             </button>

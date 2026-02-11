@@ -74,7 +74,7 @@ export function FriendHeader({
   }
 
   return (
-    <div className="relative bg-gradient-to-br from-teal-700 to-teal-600 px-4 pb-6 pt-[env(safe-area-inset-top)]">
+    <div className="relative bg-gradient-to-br from-brand-dark to-brand px-4 pb-6 pt-[env(safe-area-inset-top)]">
       {/* Top bar */}
       <div className="flex items-center justify-between py-3">
         <button

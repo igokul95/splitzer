@@ -175,7 +175,7 @@ export function GroupDetailPage() {
                   </div>
                   <span
                     className={`text-sm font-bold ${
-                      bal.amount > 0 ? "text-teal-600" : "text-orange-600"
+                      bal.amount > 0 ? "text-positive" : "text-negative"
                     }`}
                   >
                     {formatCurrency(Math.abs(bal.amount), bal.currency)}
@@ -200,7 +200,7 @@ function SoloMemberCard({ groupId }: { groupId: string }) {
         <div className="flex flex-col gap-3">
           <Link
             to={`/groups/${groupId}/add-members`}
-            className="flex items-center justify-center gap-2 rounded-full bg-teal-600 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-teal-700 active:scale-[0.98]"
+            className="flex items-center justify-center gap-2 rounded-full bg-brand px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-brand-hover active:scale-[0.98]"
           >
             <UserPlus className="h-4 w-4" />
             Add members
@@ -220,7 +220,7 @@ function LoadingSkeleton() {
     <div className="min-h-dvh bg-background">
       <div className="mx-auto w-full max-w-md">
         {/* Hero skeleton */}
-        <div className="bg-teal-700 px-4 pb-6 pt-[env(safe-area-inset-top)]">
+        <div className="bg-brand-dark px-4 pb-6 pt-[env(safe-area-inset-top)]">
           <div className="flex items-center justify-between py-3">
             <div className="h-9 w-9 animate-pulse rounded-full bg-white/20" />
             <div className="h-9 w-9 animate-pulse rounded-full bg-white/20" />

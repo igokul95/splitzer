@@ -43,14 +43,14 @@ export function BalanceSummary({
               <>
                 <span className="font-medium">{primaryBalance.name}</span>
                 {" owes you "}
-                <span className="font-bold text-teal-600">
+                <span className="font-bold text-positive">
                   {formatCurrency(primaryBalance.amount, primaryBalance.currency)}
                 </span>
               </>
             ) : (
               <>
                 {"You are owed "}
-                <span className="font-bold text-teal-600">
+                <span className="font-bold text-positive">
                   {formatCurrency(myNet, defaultCurrency)}
                 </span>
                 {" overall"}
@@ -64,14 +64,14 @@ export function BalanceSummary({
                 {"You owe "}
                 <span className="font-medium">{primaryBalance.name}</span>
                 {" "}
-                <span className="font-bold text-orange-600">
+                <span className="font-bold text-negative">
                   {formatCurrency(primaryBalance.amount, primaryBalance.currency)}
                 </span>
               </>
             ) : (
               <>
                 {"You owe "}
-                <span className="font-bold text-orange-600">
+                <span className="font-bold text-negative">
                   {formatCurrency(myNet, defaultCurrency)}
                 </span>
                 {" overall"}

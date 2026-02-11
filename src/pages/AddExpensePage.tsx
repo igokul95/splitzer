@@ -66,7 +66,7 @@ const GROUP_TYPE_ICONS: Record<string, typeof Plane> = {
 
 const GROUP_TYPE_COLORS: Record<string, string> = {
   trip: "bg-orange-500",
-  home: "bg-teal-600",
+  home: "bg-brand",
   couple: "bg-pink-500",
   other: "bg-gray-500",
 };
@@ -299,7 +299,7 @@ export function AddExpensePage() {
   if (!viewer) {
     return (
       <div className="flex min-h-dvh items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-teal-600 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand border-t-transparent" />
       </div>
     );
   }
@@ -361,7 +361,7 @@ export function AddExpensePage() {
 
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-teal-600 border-t-transparent" />
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand border-t-transparent" />
             </div>
           ) : (
             <div className="overflow-y-auto pb-8">
@@ -389,7 +389,7 @@ export function AddExpensePage() {
                           className="h-10 w-10 rounded-full object-cover"
                         />
                       ) : (
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-100 text-sm font-semibold text-teal-700">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-light text-sm font-semibold text-brand-dark">
                           {friend.name[0]?.toUpperCase()}
                         </div>
                       )}
@@ -474,7 +474,7 @@ export function AddExpensePage() {
           <button
             onClick={handleSave}
             disabled={!canSave}
-            className="rounded-full px-4 py-1.5 text-sm font-medium text-teal-600 transition-colors hover:bg-teal-50 disabled:text-muted-foreground disabled:hover:bg-transparent"
+            className="rounded-full px-4 py-1.5 text-sm font-medium text-brand transition-colors hover:bg-brand-light disabled:text-muted-foreground disabled:hover:bg-transparent"
           >
             {saving ? "Saving..." : "Save"}
           </button>
@@ -495,7 +495,7 @@ export function AddExpensePage() {
             placeholder="What was this expense for?"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full border-b border-border bg-transparent pb-2 text-lg font-medium placeholder:text-muted-foreground focus:border-teal-600 focus:outline-none"
+            className="w-full border-b border-border bg-transparent pb-2 text-lg font-medium placeholder:text-muted-foreground focus:border-brand focus:outline-none"
           />
         </div>
 
@@ -523,7 +523,7 @@ export function AddExpensePage() {
               placeholder="0.00"
               value={amountStr}
               onChange={(e) => setAmountStr(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background py-3 pl-10 pr-4 text-lg font-semibold placeholder:text-muted-foreground focus:border-teal-600 focus:outline-none"
+              className="w-full rounded-lg border border-border bg-background py-3 pl-10 pr-4 text-lg font-semibold placeholder:text-muted-foreground focus:border-brand focus:outline-none"
             />
           </div>
         </div>
@@ -556,13 +556,13 @@ export function AddExpensePage() {
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="rounded-full border border-border bg-background py-1.5 pl-8 pr-3 text-sm focus:border-teal-600 focus:outline-none"
+              className="rounded-full border border-border bg-background py-1.5 pl-8 pr-3 text-sm focus:border-brand focus:outline-none"
             />
           </div>
           <select
             value={effectiveCurrency}
             onChange={(e) => setCurrency(e.target.value)}
-            className="rounded-full border border-border bg-background px-3 py-1.5 text-sm focus:border-teal-600 focus:outline-none"
+            className="rounded-full border border-border bg-background px-3 py-1.5 text-sm focus:border-brand focus:outline-none"
           >
             {SUPPORTED_CURRENCIES.map((c) => (
               <option key={c.code} value={c.code}>
@@ -594,14 +594,14 @@ export function AddExpensePage() {
                   }}
                   className="flex w-full items-center gap-3 px-4 py-3 transition-colors hover:bg-muted"
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-100 text-sm font-semibold text-teal-700">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-light text-sm font-semibold text-brand-dark">
                     {p.name[0]?.toUpperCase()}
                   </div>
                   <span className="flex-1 text-left text-sm font-medium">
                     {p.name}
                   </span>
                   {p.userId === effectivePayerId && (
-                    <Check className="h-5 w-5 text-teal-600" />
+                    <Check className="h-5 w-5 text-brand" />
                   )}
                 </button>
               ))}
@@ -631,7 +631,7 @@ export function AddExpensePage() {
                   onClick={() => setSplitMethod(m.id)}
                   className={`flex-1 rounded-full border py-2 text-sm font-medium transition-colors ${
                     splitMethod === m.id
-                      ? "border-teal-600 bg-teal-600 text-white"
+                      ? "border-brand bg-brand text-white"
                       : "border-border bg-background text-foreground hover:bg-muted"
                   }`}
                 >
@@ -693,7 +693,7 @@ export function AddExpensePage() {
             <div className="border-t px-4 py-3">
               <button
                 onClick={() => setShowSplitSheet(false)}
-                className="w-full rounded-full bg-teal-600 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-700"
+                className="w-full rounded-full bg-brand py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
               >
                 Done
               </button>
@@ -719,14 +719,14 @@ export function AddExpensePage() {
                     }}
                     className={`flex flex-col items-center gap-2 rounded-xl border p-4 transition-colors ${
                       category === cat.id
-                        ? "border-teal-600 bg-teal-50"
+                        ? "border-brand bg-brand-light"
                         : "border-border hover:bg-muted"
                     }`}
                   >
                     <Icon
                       className={`h-6 w-6 ${
                         category === cat.id
-                          ? "text-teal-600"
+                          ? "text-brand"
                           : "text-muted-foreground"
                       }`}
                     />
@@ -750,11 +750,11 @@ export function AddExpensePage() {
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Add a note..."
                 rows={4}
-                className="w-full rounded-lg border border-border bg-background p-3 text-sm placeholder:text-muted-foreground focus:border-teal-600 focus:outline-none"
+                className="w-full rounded-lg border border-border bg-background p-3 text-sm placeholder:text-muted-foreground focus:border-brand focus:outline-none"
               />
               <button
                 onClick={() => setShowNotesSheet(false)}
-                className="mt-3 w-full rounded-full bg-teal-600 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-700"
+                className="mt-3 w-full rounded-full bg-brand py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
               >
                 Done
               </button>
@@ -800,7 +800,7 @@ function EqualSplitPanel({
             type="checkbox"
             checked={included.has(p.userId)}
             onChange={() => onToggle(p.userId)}
-            className="h-4 w-4 rounded border-border accent-teal-600"
+            className="h-4 w-4 rounded border-border accent-brand"
           />
           <span className="flex-1 text-sm font-medium">{p.name}</span>
           <span className="text-sm text-muted-foreground">
@@ -850,7 +850,7 @@ function ExactSplitPanel({
               value={amounts[p.userId] ?? ""}
               onChange={(e) => onAmountChange(p.userId, e.target.value)}
               placeholder="0.00"
-              className="w-full rounded-lg border border-border bg-background py-1.5 pl-7 pr-2 text-right text-sm focus:border-teal-600 focus:outline-none"
+              className="w-full rounded-lg border border-border bg-background py-1.5 pl-7 pr-2 text-right text-sm focus:border-brand focus:outline-none"
             />
           </div>
         </div>
@@ -859,8 +859,8 @@ function ExactSplitPanel({
         <span
           className={`text-sm font-semibold ${
             Math.abs(remaining) < 0.01
-              ? "text-teal-600"
-              : "text-orange-600"
+              ? "text-positive"
+              : "text-negative"
           }`}
         >
           {remaining >= 0 ? "Remaining" : "Over by"}: {getCurrencySymbol(currency)}
@@ -900,7 +900,7 @@ function PercentageSplitPanel({
               value={percentages[p.userId] ?? ""}
               onChange={(e) => onPercentChange(p.userId, e.target.value)}
               placeholder="0"
-              className="w-full rounded-lg border border-border bg-background py-1.5 pl-3 pr-7 text-right text-sm focus:border-teal-600 focus:outline-none"
+              className="w-full rounded-lg border border-border bg-background py-1.5 pl-3 pr-7 text-right text-sm focus:border-brand focus:outline-none"
             />
             <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
               %
@@ -912,8 +912,8 @@ function PercentageSplitPanel({
         <span
           className={`text-sm font-semibold ${
             Math.abs(total - 100) < 0.01
-              ? "text-teal-600"
-              : "text-orange-600"
+              ? "text-positive"
+              : "text-negative"
           }`}
         >
           Total: {total.toFixed(1)}%
@@ -962,7 +962,7 @@ function SharesSplitPanel({
               value={shares[p.userId] ?? ""}
               onChange={(e) => onShareChange(p.userId, e.target.value)}
               placeholder="0"
-              className="w-16 rounded-lg border border-border bg-background py-1.5 px-2 text-center text-sm focus:border-teal-600 focus:outline-none"
+              className="w-16 rounded-lg border border-border bg-background py-1.5 px-2 text-center text-sm focus:border-brand focus:outline-none"
             />
           </div>
         );

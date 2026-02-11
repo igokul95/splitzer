@@ -27,7 +27,7 @@ export function AccountPage() {
               className="h-20 w-20 rounded-full"
             />
           ) : (
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-teal-600 text-2xl font-bold text-white">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand text-2xl font-bold text-white">
               {(viewer?.name ?? "U").charAt(0).toUpperCase()}
             </div>
           )}

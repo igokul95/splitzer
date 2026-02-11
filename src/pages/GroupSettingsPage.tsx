@@ -181,7 +181,7 @@ export function GroupSettingsPage() {
                     disabled={isSaving}
                     className={`flex flex-col items-center gap-1.5 rounded-xl border-2 p-3 text-xs font-medium transition-all ${
                       isSelected
-                        ? "border-teal-600 bg-teal-50 text-teal-700"
+                        ? "border-brand bg-brand-light text-brand-dark"
                         : "border-border bg-background text-muted-foreground hover:border-muted-foreground/30"
                     }`}
                   >
@@ -251,7 +251,7 @@ export function GroupSettingsPage() {
                         className="h-8 w-8 rounded-full"
                       />
                     ) : (
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-600 text-xs font-bold text-white">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">
                         {m.name.charAt(0).toUpperCase()}
                       </div>
                     )}

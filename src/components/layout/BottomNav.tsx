@@ -19,7 +19,7 @@ export function BottomNav() {
             className={({ isActive }) =>
               `flex flex-1 flex-col items-center gap-0.5 py-2 text-xs transition-colors ${
                 isActive
-                  ? "text-teal-600 font-medium"
+                  ? "text-brand font-medium"
                   : "text-muted-foreground"
               }`
             }
@@ -27,7 +27,7 @@ export function BottomNav() {
             {({ isActive }) => (
               <>
                 <item.icon
-                  className={`h-5 w-5 ${isActive ? "fill-teal-600/20 stroke-teal-600" : ""}`}
+                  className={`h-5 w-5 ${isActive ? "fill-brand/20 stroke-brand" : ""}`}
                   strokeWidth={isActive ? 2.5 : 2}
                 />
                 <span>{item.label}</span>

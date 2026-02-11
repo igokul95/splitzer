@@ -133,8 +133,8 @@ function BalanceLabel({
   if (amount > 0) {
     return (
       <div className="shrink-0 text-right">
-        <p className="text-xs font-medium text-teal-600">owes you</p>
-        <p className="text-sm font-bold text-teal-600">
+        <p className="text-xs font-medium text-positive">owes you</p>
+        <p className="text-sm font-bold text-positive">
           {formatCurrency(amount, currency)}
         </p>
       </div>
@@ -143,8 +143,8 @@ function BalanceLabel({
 
   return (
     <div className="shrink-0 text-right">
-      <p className="text-xs font-medium text-orange-600">you owe</p>
-      <p className="text-sm font-bold text-orange-600">
+      <p className="text-xs font-medium text-negative">you owe</p>
+      <p className="text-sm font-bold text-negative">
         {formatCurrency(amount, currency)}
       </p>
     </div>
@@ -166,7 +166,7 @@ function GroupBreakdownLine({
     return (
       <p className="text-xs text-muted-foreground">
         {friendName} owes you{" "}
-        <span className="font-medium text-teal-600">
+        <span className="font-medium text-positive">
           {formatCurrency(amount, currency)}
         </span>
         {" in \u201C"}
@@ -179,7 +179,7 @@ function GroupBreakdownLine({
   return (
     <p className="text-xs text-muted-foreground">
       You owe {friendName}{" "}
-      <span className="font-medium text-orange-600">
+      <span className="font-medium text-negative">
         {formatCurrency(amount, currency)}
       </span>
       {" in \u201C"}

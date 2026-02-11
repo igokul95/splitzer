@@ -77,7 +77,7 @@ export const GROUP_TYPE_CONFIG: Record<
   home: {
     label: "Home",
     icon: "Home",
-    bgColor: "bg-teal-600",
+    bgColor: "bg-brand",
     textColor: "text-white",
   },
   couple: {

@@ -116,7 +116,7 @@ export function AddContactPage() {
           <button
             onClick={handleNext}
             disabled={!name.trim() || isSubmitting}
-            className="w-full rounded-full bg-muted py-3 text-sm font-medium text-muted-foreground transition-colors enabled:bg-teal-600 enabled:text-white enabled:hover:bg-teal-700 disabled:opacity-60"
+            className="w-full rounded-full bg-muted py-3 text-sm font-medium text-muted-foreground transition-colors enabled:bg-brand enabled:text-white enabled:hover:bg-brand-hover disabled:opacity-60"
           >
             {isSubmitting ? "Adding..." : "Next"}
           </button>

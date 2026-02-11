@@ -21,7 +21,7 @@ export function GroupsPage() {
           </button>
           <Link
             to="/groups/create"
-            className="text-sm font-medium text-teal-600"
+            className="text-sm font-medium text-brand"
           >
             Create group
           </Link>
@@ -87,7 +87,7 @@ function OverallBalance({
     <div className="py-4">
       <p className="text-sm">
         Overall,{" "}
-        <span className={isOwed ? "text-teal-600" : "text-orange-600"}>
+        <span className={isOwed ? "text-positive" : "text-negative"}>
           {isOwed ? "you are owed " : "you owe "}
           <span className="font-bold">
             {formatCurrency(amount, currency)}
@@ -101,8 +101,8 @@ function OverallBalance({
 function EmptyState() {
   return (
     <div className="flex min-h-[60dvh] flex-col items-center justify-center gap-4 px-4">
-      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-teal-50">
-        <Users className="h-10 w-10 text-teal-600" />
+      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-light">
+        <Users className="h-10 w-10 text-brand" />
       </div>
       <div className="text-center">
         <h2 className="text-lg font-semibold">No groups yet</h2>
@@ -112,7 +112,7 @@ function EmptyState() {
       </div>
       <Link
         to="/groups/create"
-        className="inline-flex items-center gap-2 rounded-full bg-teal-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-700"
+        className="inline-flex items-center gap-2 rounded-full bg-brand px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
       >
         <Plus className="h-4 w-4" />
         Create your first group

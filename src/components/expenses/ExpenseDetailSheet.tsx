@@ -151,9 +151,9 @@ export function ExpenseDetailSheet({
                       <span
                         className={`text-sm font-bold ${
                           split.netAmount > 0.005
-                            ? "text-teal-600"
+                            ? "text-positive"
                             : split.netAmount < -0.005
-                              ? "text-orange-600"
+                              ? "text-negative"
                               : "text-muted-foreground"
                         }`}
                       >

@@ -110,8 +110,8 @@ export function FriendDetailPage() {
                           onClick={() => navigate(`/groups/${group.groupId}`)}
                           className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50 active:bg-muted"
                         >
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-100">
-                            <Users className="h-5 w-5 text-teal-700" />
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-light">
+                            <Users className="h-5 w-5 text-brand-dark" />
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium">
@@ -123,11 +123,11 @@ export function FriendDetailPage() {
                                 settled up
                               </p>
                             ) : group.amount > 0 ? (
-                              <p className="text-xs text-teal-600">
+                              <p className="text-xs text-positive">
                                 owes you {formatCurrency(group.amount, group.currency)}
                               </p>
                             ) : (
-                              <p className="text-xs text-orange-600">
+                              <p className="text-xs text-negative">
                                 you owe {formatCurrency(group.amount, group.currency)}
                               </p>
                             )}
@@ -202,7 +202,7 @@ function ActionButton({
     return (
       <button
         onClick={onClick}
-        className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-700 active:scale-[0.98]"
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover active:scale-[0.98]"
       >
         <Icon className="h-4 w-4" />
         {label}
@@ -242,7 +242,7 @@ function LoadingSkeleton() {
   return (
     <div className="min-h-dvh bg-background">
       <div className="mx-auto w-full max-w-md">
-        <div className="bg-teal-700 px-4 pb-6 pt-[env(safe-area-inset-top)]">
+        <div className="bg-brand-dark px-4 pb-6 pt-[env(safe-area-inset-top)]">
           <div className="flex items-center justify-between py-3">
             <div className="h-9 w-9 animate-pulse rounded-full bg-white/20" />
             <div className="h-9 w-9 animate-pulse rounded-full bg-white/20" />

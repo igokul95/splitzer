@@ -89,7 +89,7 @@ export function CreateAddMembersPage() {
         <header className="flex items-center justify-between py-4">
           <button
             onClick={handleCancel}
-            className="text-sm font-medium text-teal-600"
+            className="text-sm font-medium text-brand"
           >
             Cancel
           </button>
@@ -156,7 +156,7 @@ export function CreateAddMembersPage() {
                           className="h-10 w-10 rounded-full object-cover"
                         />
                       ) : (
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-600 text-sm font-bold text-white">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand text-sm font-bold text-white">
                           {contact.name.charAt(0).toUpperCase()}
                         </div>
                       )}
@@ -166,7 +166,7 @@ export function CreateAddMembersPage() {
                       <div
                         className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
                           isSelected
-                            ? "border-teal-600 bg-teal-600"
+                            ? "border-brand bg-brand"
                             : "border-muted-foreground/40"
                         }`}
                       >
@@ -187,7 +187,7 @@ export function CreateAddMembersPage() {
           <div className="fixed bottom-6 left-0 right-0 z-50 mx-auto w-full max-w-md px-4">
             <button
               onClick={handleDone}
-              className="flex w-full items-center justify-center gap-2 rounded-full bg-teal-600 py-3 text-sm font-medium text-white shadow-lg transition-all hover:bg-teal-700 active:scale-[0.98]"
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-brand py-3 text-sm font-medium text-white shadow-lg transition-all hover:bg-brand-hover active:scale-[0.98]"
             >
               Add {selected.size} member{selected.size > 1 ? "s" : ""}
             </button>

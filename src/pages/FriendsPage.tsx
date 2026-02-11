@@ -25,7 +25,7 @@ export function FriendsPage() {
           >
             <Search className="h-5 w-5" />
           </button>
-          <Link to="/friends/add" className="text-sm font-medium text-teal-600">
+          <Link to="/friends/add" className="text-sm font-medium text-brand">
             Add friends
           </Link>
         </header>
@@ -39,7 +39,7 @@ export function FriendsPage() {
               placeholder="Search friends..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
         )}
@@ -156,7 +156,7 @@ function OverallBalance({
           {youOwe.map((entry, i) => (
             <span key={entry.currency}>
               {i > 0 && " + "}
-              <span className="font-bold text-orange-600">
+              <span className="font-bold text-negative">
                 {formatCurrency(entry.amount, entry.currency)}
               </span>
             </span>
@@ -169,7 +169,7 @@ function OverallBalance({
           {youAreOwed.map((entry, i) => (
             <span key={entry.currency}>
               {i > 0 && " + "}
-              <span className="font-bold text-teal-600">
+              <span className="font-bold text-positive">
                 {formatCurrency(entry.amount, entry.currency)}
               </span>
             </span>
@@ -183,8 +183,8 @@ function OverallBalance({
 function EmptyState() {
   return (
     <div className="flex min-h-[60dvh] flex-col items-center justify-center gap-4 px-4">
-      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-teal-50">
-        <Users className="h-10 w-10 text-teal-600" />
+      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-light">
+        <Users className="h-10 w-10 text-brand" />
       </div>
       <div className="text-center">
         <h2 className="text-lg font-semibold">No friends yet</h2>
@@ -195,7 +195,7 @@ function EmptyState() {
       </div>
       <Link
         to="/groups/create"
-        className="inline-flex items-center gap-2 rounded-full bg-teal-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-700"
+        className="inline-flex items-center gap-2 rounded-full bg-brand px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
       >
         <UserPlus className="h-4 w-4" />
         Create a group

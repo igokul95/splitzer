@@ -114,8 +114,8 @@ export function InvolvementLabel({
   if (type === "lent") {
     return (
       <div className="shrink-0 text-right">
-        <p className="text-xs font-medium text-teal-600">you lent</p>
-        <p className="text-sm font-bold text-teal-600">
+        <p className="text-xs font-medium text-positive">you lent</p>
+        <p className="text-sm font-bold text-positive">
           {formatCurrency(amount, currency)}
         </p>
       </div>
@@ -124,8 +124,8 @@ export function InvolvementLabel({
 
   return (
     <div className="shrink-0 text-right">
-      <p className="text-xs font-medium text-orange-600">you borrowed</p>
-      <p className="text-sm font-bold text-orange-600">
+      <p className="text-xs font-medium text-negative">you borrowed</p>
+      <p className="text-sm font-bold text-negative">
         {formatCurrency(amount, currency)}
       </p>
     </div>

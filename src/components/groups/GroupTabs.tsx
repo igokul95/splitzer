@@ -24,7 +24,7 @@ export function GroupTabBar({
     <div className="flex items-center gap-2 overflow-x-auto px-4 py-3 no-scrollbar">
       <button
         onClick={onSettleUp}
-        className="shrink-0 rounded-full bg-teal-600 px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-teal-700"
+        className="shrink-0 rounded-full bg-brand px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-brand-hover"
       >
         Settle up
       </button>
@@ -129,7 +129,7 @@ export function BalancesTab({ balances, currentUserId }: BalancesTabProps) {
             </div>
             <span
               className={`text-sm font-bold ${
-                owerId === currentUserId ? "text-orange-600" : "text-teal-600"
+                owerId === currentUserId ? "text-negative" : "text-positive"
               }`}
             >
               {formatCurrency(absAmount, bal.currency)}

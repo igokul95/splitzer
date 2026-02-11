@@ -28,6 +28,7 @@ export default function App() {
   return (
     <ClerkProvider
       publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string}
+      proxyUrl={import.meta.env.VITE_CLERK_PROXY_URL as string | undefined}
     >
       <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
         <BrowserRouter>

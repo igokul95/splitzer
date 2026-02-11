@@ -268,6 +268,30 @@ export const getFriendDetail = query({
       });
     }
 
+    // Aggregate balances by source (group vs non-group) and currency
+    const groupCurrencyMap = new Map<string, number>();
+    const nonGroupCurrencyMap = new Map<string, number>();
+
+    for (const bal of pairBalances) {
+      const balNet = u1 === me._id ? bal.amount : -bal.amount;
+      const map = bal.groupId ? groupCurrencyMap : nonGroupCurrencyMap;
+      const prev = map.get(bal.currency) ?? 0;
+      map.set(bal.currency, prev + balNet);
+    }
+
+    const balancesByCurrency: Array<{ source: "group" | "nonGroup"; currency: string; net: number }> = [];
+
+    for (const [currency, net] of groupCurrencyMap) {
+      if (Math.abs(net) >= 0.005) {
+        balancesByCurrency.push({ source: "group", currency, net });
+      }
+    }
+    for (const [currency, net] of nonGroupCurrencyMap) {
+      if (Math.abs(net) >= 0.005) {
+        balancesByCurrency.push({ source: "nonGroup", currency, net });
+      }
+    }
+
     // groupBreakdowns for backward compat (only non-zero balances)
     const groupBreakdowns = sharedGroups
       .filter((g) => Math.abs(g.amount) > 0.005)
@@ -387,6 +411,7 @@ export const getFriendDetail = query({
       },
       overallNet,
       currency: friendBalance?.currency ?? me.defaultCurrency,
+      balancesByCurrency,
       groupBreakdowns: groupBreakdowns.sort(
         (a, b) => Math.abs(b.amount) - Math.abs(a.amount)
       ),

@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { formatCurrency } from "@/lib/format";
 import { Id } from "../../../convex/_generated/dataModel";
 import { ExpenseRow } from "@/components/expenses/ExpenseRow";
+import { ExpenseDetailSheet } from "@/components/expenses/ExpenseDetailSheet";
 import { ArrowRight, Receipt } from "lucide-react";
 
 type Tab = "expenses" | "balances" | "totals";
@@ -174,6 +176,7 @@ interface ExpensesTabProps {
 
 export function ExpensesTab({ groupId }: ExpensesTabProps) {
   const expenses = useQuery(api.expenses.getGroupExpenses, { groupId });
+  const [selectedExpenseId, setSelectedExpenseId] = useState<Id<"expenses"> | null>(null);
 
   if (expenses === undefined) {
     return (
@@ -237,11 +240,17 @@ export function ExpensesTab({ groupId }: ExpensesTabProps) {
                 currency={exp.currency}
                 isSettlement={exp.isSettlement}
                 myInvolvement={exp.myInvolvement}
+                onClick={() => setSelectedExpenseId(exp._id)}
               />
             ))}
           </div>
         </div>
       ))}
+
+      <ExpenseDetailSheet
+        expenseId={selectedExpenseId}
+        onClose={() => setSelectedExpenseId(null)}
+      />
     </div>
   );
 }

@@ -256,6 +256,65 @@ export const settleUp = mutation({
 // ─── Queries ────────────────────────────────────────────────────────────────
 
 /**
+ * Get full details for a single expense, including splits with resolved user names.
+ */
+export const getExpenseDetail = query({
+  args: { expenseId: v.id("expenses") },
+  handler: async (ctx, args) => {
+    const me = await getAuthUser(ctx);
+
+    const expense = await ctx.db.get(args.expenseId);
+    if (!expense) throw new Error("Expense not found");
+
+    // Payer name
+    const payer = await ctx.db.get(expense.paidBy);
+    const payerName =
+      expense.paidBy === me._id ? "You" : (payer?.name ?? "Unknown");
+
+    // Group name
+    let groupName: string | null = null;
+    if (expense.groupId) {
+      const group = await ctx.db.get(expense.groupId);
+      groupName = group?.name ?? "Deleted group";
+    }
+
+    // Get all splits with resolved user names
+    const splits = await ctx.db
+      .query("expenseSplits")
+      .withIndex("by_expense", (q) => q.eq("expenseId", args.expenseId))
+      .collect();
+
+    const splitDetails = await Promise.all(
+      splits.map(async (split) => {
+        const user = await ctx.db.get(split.userId);
+        return {
+          userId: split.userId,
+          userName: split.userId === me._id ? "You" : (user?.name ?? "Unknown"),
+          paidAmount: split.paidAmount,
+          owedAmount: split.owedAmount,
+          netAmount: split.paidAmount - split.owedAmount,
+        };
+      })
+    );
+
+    return {
+      _id: expense._id,
+      description: expense.description,
+      totalAmount: expense.totalAmount,
+      currency: expense.currency,
+      category: expense.category,
+      date: expense.date,
+      splitMethod: expense.splitMethod,
+      notes: expense.notes,
+      isSettlement: expense.isSettlement,
+      payerName,
+      groupName,
+      splits: splitDetails,
+    };
+  },
+});
+
+/**
  * Get all expenses for a group, with the current user's involvement.
  */
 export const getGroupExpenses = query({

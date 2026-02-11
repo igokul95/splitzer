@@ -7,8 +7,7 @@ interface FriendHeaderProps {
   name: string;
   shortName: string;
   avatarUrl?: string;
-  net: number;
-  currency: string;
+  balances: Array<{ source: "group" | "nonGroup"; net: number; currency: string }>;
 }
 
 // Stable avatar colors derived from name
@@ -46,19 +45,32 @@ export function FriendHeader({
   name,
   shortName,
   avatarUrl,
-  net,
-  currency,
+  balances,
 }: FriendHeaderProps) {
   const navigate = useNavigate();
 
-  // Balance summary text
-  let balanceText = "";
-  if (Math.abs(net) < 0.01) {
-    balanceText = "All settled up";
-  } else if (net > 0) {
-    balanceText = `${shortName} owes you ${formatCurrency(net, currency)}`;
-  } else {
-    balanceText = `You owe ${shortName} ${formatCurrency(net, currency)}`;
+  // Build balance lines — one line per (source, direction), multi-currency joined with " + "
+  const lineMap = new Map<string, { amounts: string[]; direction: "owed" | "owe"; source: "group" | "nonGroup" }>();
+  for (const b of balances) {
+    const direction = b.net > 0 ? "owed" : "owe";
+    const key = `${b.source}:${direction}`;
+    let entry = lineMap.get(key);
+    if (!entry) {
+      entry = { amounts: [], direction, source: b.source };
+      lineMap.set(key, entry);
+    }
+    entry.amounts.push(formatCurrency(Math.abs(b.net), b.currency));
+  }
+
+  const balanceLines: string[] = [];
+  for (const { amounts, direction, source } of lineMap.values()) {
+    const amountStr = amounts.join(" + ");
+    const suffix = source === "group" ? " in groups" : " individually";
+    if (direction === "owed") {
+      balanceLines.push(`${shortName} owes you ${amountStr}${suffix}`);
+    } else {
+      balanceLines.push(`You owe ${shortName} ${amountStr}${suffix}`);
+    }
   }
 
   return (
@@ -101,7 +113,15 @@ export function FriendHeader({
       <h1 className="mt-3 text-2xl font-bold text-white">{name}</h1>
 
       {/* Balance summary */}
-      <p className="mt-1 text-sm text-white/80">{balanceText}</p>
+      {balanceLines.length === 0 ? (
+        <p className="mt-1 text-sm text-white/80">All settled up</p>
+      ) : (
+        <div className="mt-1 space-y-0.5">
+          {balanceLines.map((line, i) => (
+            <p key={i} className="text-sm text-white/80">{line}</p>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

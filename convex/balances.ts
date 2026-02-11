@@ -1,6 +1,36 @@
-import { MutationCtx } from "./_generated/server";
+import { MutationCtx, internalMutation } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 import { canonicalPair } from "./helpers";
+
+/**
+ * One-time migration: recalculate all balance rows using per-currency logic.
+ * Run via: npx convex run balances:recalcAllBalances
+ */
+export const recalcAllBalances = internalMutation({
+  handler: async (ctx) => {
+    // Get all existing balance rows
+    const allBalances = await ctx.db.query("balances").collect();
+
+    // Collect unique (user1, user2, groupId) tuples to recalculate
+    const seen = new Set<string>();
+    const tuples: { user1: Id<"users">; user2: Id<"users">; groupId: Id<"groups"> | undefined }[] = [];
+
+    for (const bal of allBalances) {
+      const key = `${bal.user1}:${bal.user2}:${bal.groupId ?? "none"}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        tuples.push({ user1: bal.user1, user2: bal.user2, groupId: bal.groupId });
+      }
+    }
+
+    for (const { user1, user2, groupId } of tuples) {
+      await recalcContextBalance(ctx, user1, user2, groupId);
+      await recalcFriendBalance(ctx, user1, user2);
+    }
+
+    return { recalculated: tuples.length };
+  },
+});
 
 /**
  * Update balances for all pairs affected by an expense's splits.
@@ -32,22 +62,21 @@ export async function updateBalancesForExpense(
 
   // For each pair, recalc context balance then friend balance
   for (const [u1, u2] of pairs) {
-    await recalcContextBalance(ctx, u1, u2, groupId, currency);
-    await recalcFriendBalance(ctx, u1, u2, currency);
+    await recalcContextBalance(ctx, u1, u2, groupId);
+    await recalcFriendBalance(ctx, u1, u2);
   }
 }
 
 /**
  * Recalculate the balance between a canonical pair within a specific context
  * (group or non-group). Scans all non-deleted expenses in that context and
- * recomputes the net flow between the two users.
+ * recomputes the net flow between the two users, per currency.
  */
 async function recalcContextBalance(
   ctx: MutationCtx,
   user1: Id<"users">,
   user2: Id<"users">,
   groupId: Id<"groups"> | undefined,
-  currency: string
 ) {
   let expenses;
 
@@ -64,8 +93,8 @@ async function recalcContextBalance(
 
   expenses = expenses.filter((e) => !e.isDeleted);
 
-  // Accumulate net flow: positive means user2 owes user1
-  let netAmount = 0;
+  // Accumulate net flow per currency: positive means user2 owes user1
+  const netByCurrency = new Map<string, number>();
 
   for (const expense of expenses) {
     const splits = await ctx.db
@@ -104,44 +133,51 @@ async function recalcContextBalance(
         if (!isRelevant) continue;
 
         const flow = (Math.abs(borrower.net) * lender.net) / totalLent;
+        const prev = netByCurrency.get(expense.currency) ?? 0;
 
         if (lender.userId === user1) {
-          // user1 lent to user2 → user2 owes user1 → positive
-          netAmount += flow;
+          netByCurrency.set(expense.currency, prev + flow);
         } else {
-          // user2 lent to user1 → user1 owes user2 → negative
-          netAmount -= flow;
+          netByCurrency.set(expense.currency, prev - flow);
         }
       }
     }
   }
 
-  // Round to 2 decimal places
-  netAmount = Math.round(netAmount * 100) / 100;
-
-  // Upsert into balances table
-  const existing = await ctx.db
+  // Get all existing balance rows for this (user1, user2, groupId)
+  const existingRows = await ctx.db
     .query("balances")
     .withIndex("by_pair_group", (q) =>
       q.eq("user1", user1).eq("user2", user2).eq("groupId", groupId)
     )
-    .first();
+    .collect();
 
-  if (existing) {
-    await ctx.db.patch(existing._id, {
-      amount: netAmount,
-      currency,
-      updatedAt: Date.now(),
-    });
-  } else {
-    await ctx.db.insert("balances", {
-      user1,
-      user2,
-      groupId,
-      currency,
-      amount: netAmount,
-      updatedAt: Date.now(),
-    });
+  // Upsert one balance row per currency
+  for (const [currency, net] of netByCurrency) {
+    const rounded = Math.round(net * 100) / 100;
+    const existing = existingRows.find((r) => r.currency === currency);
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        amount: rounded,
+        updatedAt: Date.now(),
+      });
+    } else {
+      await ctx.db.insert("balances", {
+        user1,
+        user2,
+        groupId,
+        currency,
+        amount: rounded,
+        updatedAt: Date.now(),
+      });
+    }
+  }
+
+  // Delete stale rows for currencies that no longer have any expenses
+  for (const row of existingRows) {
+    if (!netByCurrency.has(row.currency)) {
+      await ctx.db.delete(row._id);
+    }
   }
 }
 
@@ -153,7 +189,6 @@ async function recalcFriendBalance(
   ctx: MutationCtx,
   user1: Id<"users">,
   user2: Id<"users">,
-  currency: string
 ) {
   const allContextBalances = await ctx.db
     .query("balances")
@@ -163,6 +198,12 @@ async function recalcFriendBalance(
   const totalAmount = allContextBalances.reduce((sum, b) => sum + b.amount, 0);
   const roundedTotal = Math.round(totalAmount * 100) / 100;
 
+  // Use the currency from the first non-zero balance, or fallback
+  const primaryCurrency =
+    allContextBalances.find((b) => b.amount !== 0)?.currency ??
+    allContextBalances[0]?.currency ??
+    "USD";
+
   const existing = await ctx.db
     .query("friendBalances")
     .withIndex("by_pair", (q) => q.eq("user1", user1).eq("user2", user2))
@@ -171,7 +212,7 @@ async function recalcFriendBalance(
   if (existing) {
     await ctx.db.patch(existing._id, {
       totalAmount: roundedTotal,
-      currency,
+      currency: primaryCurrency,
       lastActivityAt: Date.now(),
     });
   } else {
@@ -179,7 +220,7 @@ async function recalcFriendBalance(
       user1,
       user2,
       totalAmount: roundedTotal,
-      currency,
+      currency: primaryCurrency,
       lastActivityAt: Date.now(),
     });
   }

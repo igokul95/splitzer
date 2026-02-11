@@ -1,15 +1,14 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { FriendHeader } from "@/components/friends/FriendHeader";
 import { ExpenseRow } from "@/components/expenses/ExpenseRow";
+import { ExpenseDetailSheet } from "@/components/expenses/ExpenseDetailSheet";
 import { formatCurrency } from "@/lib/format";
 import {
   HandCoins,
-  Bell,
-  PieChart,
-  ArrowRightLeft,
   Receipt,
   Users,
   ChevronRight,
@@ -25,6 +24,8 @@ export function FriendDetailPage() {
     api.friends.getFriendDetail,
     id ? { friendId: id as Id<"users"> } : "skip"
   );
+
+  const [selectedExpenseId, setSelectedExpenseId] = useState<Id<"expenses"> | null>(null);
 
   if (!id) {
     navigate("/friends");
@@ -49,6 +50,7 @@ export function FriendDetailPage() {
   const hasNonGroupExpenses = data.nonGroupExpenses.length > 0;
   const isEmpty = !hasGroups && !hasNonGroupExpenses;
 
+  console.log("non group expenses", data.nonGroupExpenses);
   return (
     <div className="min-h-dvh bg-background">
       <div className="mx-auto w-full max-w-md">
@@ -58,8 +60,7 @@ export function FriendDetailPage() {
           name={data.friend.name}
           shortName={data.friend.shortName}
           avatarUrl={data.friend.avatarUrl}
-          net={data.overallNet}
-          currency={data.currency}
+          balances={data.balancesByCurrency}
         />
 
         {/* Action buttons */}
@@ -85,24 +86,6 @@ export function FriendDetailPage() {
                 },
               });
             }}
-          />
-          <ActionButton
-            label="Remind..."
-            icon={Bell}
-            variant="outline"
-            onClick={() => {}}
-          />
-          <ActionButton
-            label="Charts"
-            icon={PieChart}
-            variant="outline"
-            onClick={() => {}}
-          />
-          <ActionButton
-            label="Convert to..."
-            icon={ArrowRightLeft}
-            variant="outline"
-            onClick={() => {}}
           />
         </div>
 
@@ -179,6 +162,7 @@ export function FriendDetailPage() {
                             currency={exp.currency}
                             isSettlement={exp.isSettlement}
                             myInvolvement={exp.myInvolvement}
+                            onClick={() => setSelectedExpenseId(exp._id)}
                           />
                         ))}
                       </div>
@@ -201,6 +185,11 @@ export function FriendDetailPage() {
           </button>
         </div>
       </div>
+
+      <ExpenseDetailSheet
+        expenseId={selectedExpenseId}
+        onClose={() => setSelectedExpenseId(null)}
+      />
     </div>
   );
 }
@@ -270,7 +259,7 @@ function LoadingSkeleton() {
           <div className="mt-2 h-4 w-52 animate-pulse rounded bg-white/20" />
         </div>
         <div className="flex gap-2 px-4 py-4">
-          {[1, 2, 3, 4].map((i) => (
+          {[1].map((i) => (
             <div
               key={i}
               className="h-9 w-24 animate-pulse rounded-full bg-muted"

@@ -11,7 +11,7 @@ export function MobileShell({ children, hideNav = false }: MobileShellProps) {
   return (
     <div className="min-h-dvh bg-background">
       <div
-        className={`mx-auto w-full max-w-md ${hideNav ? "pb-[env(safe-area-inset-bottom)]" : "pb-16"}`}
+        className={`mx-auto w-full max-w-md px-4 ${hideNav ? "pb-[env(safe-area-inset-bottom)]" : "pb-16"}`}
       >
         {children}
       </div>

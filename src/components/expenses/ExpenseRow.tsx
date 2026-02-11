@@ -37,6 +37,7 @@ interface ExpenseRowProps {
     type: "borrowed" | "lent" | "settled_up" | "not_involved";
     amount: number;
   };
+  onClick?: () => void;
 }
 
 export function ExpenseRow({
@@ -48,6 +49,7 @@ export function ExpenseRow({
   currency,
   isSettlement,
   myInvolvement,
+  onClick,
 }: ExpenseRowProps) {
   const dateObj = new Date(date);
   const dayNum = dateObj.getDate();
@@ -56,7 +58,13 @@ export function ExpenseRow({
   const CategoryIcon = isSettlement ? HandCoins : getCategoryIcon(category);
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3">
+    <div
+      className={`flex items-center gap-3 px-4 py-3${onClick ? " cursor-pointer transition-colors hover:bg-muted/50 active:bg-muted" : ""}`}
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
+    >
       {/* Date column */}
       <div className="w-8 shrink-0 text-center">
         <p className="text-xs text-muted-foreground">{monthShort}</p>

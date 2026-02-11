@@ -46,21 +46,15 @@ function compressImage(file: File): Promise<{ base64: string; mimeType: string }
 export function useReceiptScanner(options?: UseReceiptScannerOptions) {
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showCamera, setShowCamera] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scanReceipt = useAction(api.receipts.scanReceipt);
   const navigate = useNavigate();
 
-  const triggerScan = useCallback(() => {
-    setError(null);
-    fileInputRef.current?.click();
-  }, []);
-
-  const handleFileChange = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      // Reset input so the same file can be selected again
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      if (!file) return;
+  const handleCapture = useCallback(
+    async (file: File) => {
+      setShowCamera(false);
 
       if (!file.type.startsWith("image/")) {
         setError("Please select an image file.");
@@ -95,5 +89,57 @@ export function useReceiptScanner(options?: UseReceiptScannerOptions) {
     [scanReceipt, navigate, options?.locationState]
   );
 
-  return { scanning, error, fileInputRef, triggerScan, handleFileChange };
+  const triggerScan = useCallback(() => {
+    setError(null);
+    setShowPicker(true);
+  }, []);
+
+  const closePicker = useCallback(() => {
+    setShowPicker(false);
+  }, []);
+
+  const chooseCamera = useCallback(() => {
+    setShowPicker(false);
+    setShowCamera(true);
+  }, []);
+
+  const chooseMedia = useCallback(() => {
+    setShowPicker(false);
+    fileInputRef.current?.click();
+  }, []);
+
+  const closeCamera = useCallback(() => {
+    setShowCamera(false);
+  }, []);
+
+  const fallbackToFileInput = useCallback(() => {
+    setShowCamera(false);
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (!file) return;
+      handleCapture(file);
+    },
+    [handleCapture]
+  );
+
+  return {
+    scanning,
+    error,
+    fileInputRef,
+    triggerScan,
+    handleFileChange,
+    showCamera,
+    closeCamera,
+    fallbackToFileInput,
+    handleCapture,
+    showPicker,
+    closePicker,
+    chooseCamera,
+    chooseMedia,
+  };
 }

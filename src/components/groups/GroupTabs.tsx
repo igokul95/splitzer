@@ -5,7 +5,7 @@ import { formatCurrency } from "@/lib/format";
 import { Id } from "../../../convex/_generated/dataModel";
 import { ExpenseRow } from "@/components/expenses/ExpenseRow";
 import { ExpenseDetailSheet } from "@/components/expenses/ExpenseDetailSheet";
-import { ArrowRight, Receipt } from "lucide-react";
+import { ArrowRight, HandCoins, Receipt } from "lucide-react";
 
 type Tab = "expenses" | "balances" | "totals";
 
@@ -24,25 +24,11 @@ export function GroupTabBar({
     <div className="flex items-center gap-2 overflow-x-auto px-4 py-3 no-scrollbar">
       <button
         onClick={onSettleUp}
-        className="shrink-0 rounded-full bg-brand px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-brand-hover"
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover active:scale-[0.98]"
       >
+        <HandCoins className="h-4 w-4" />
         Settle up
       </button>
-      <TabPill
-        label="Expenses"
-        isActive={activeTab === "expenses"}
-        onClick={() => onTabChange("expenses")}
-      />
-      <TabPill
-        label="Balances"
-        isActive={activeTab === "balances"}
-        onClick={() => onTabChange("balances")}
-      />
-      <TabPill
-        label="Totals"
-        isActive={activeTab === "totals"}
-        onClick={() => onTabChange("totals")}
-      />
     </div>
   );
 }

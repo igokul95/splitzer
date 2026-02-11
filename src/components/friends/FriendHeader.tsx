@@ -1,35 +1,25 @@
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Settings } from "lucide-react";
-import { formatCurrency } from "@/lib/format";
 
-interface FriendHeaderProps {
-  friendId: string;
-  name: string;
-  shortName: string;
-  avatarUrl?: string;
-  balances: Array<{ source: "group" | "nonGroup"; net: number; currency: string }>;
-}
-
-// Stable avatar colors derived from name
-const AVATAR_COLORS_HEX = [
-  "#14b8a6", // teal-500
-  "#f97316", // orange-500
-  "#a855f7", // purple-500
-  "#ec4899", // pink-500
-  "#3b82f6", // blue-500
-  "#10b981", // emerald-500
-  "#f43f5e", // rose-500
-  "#f59e0b", // amber-500
-  "#6366f1", // indigo-500
-  "#06b6d4", // cyan-500
+const AVATAR_COLORS = [
+  "bg-teal-500",
+  "bg-orange-500",
+  "bg-purple-500",
+  "bg-pink-500",
+  "bg-blue-500",
+  "bg-emerald-500",
+  "bg-rose-500",
+  "bg-amber-500",
+  "bg-indigo-500",
+  "bg-cyan-500",
 ];
 
-function getAvatarColorHex(name: string): string {
+function getAvatarColor(name: string): string {
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
-  return AVATAR_COLORS_HEX[Math.abs(hash) % AVATAR_COLORS_HEX.length];
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
 
 function getInitials(name: string): string {
@@ -40,38 +30,18 @@ function getInitials(name: string): string {
   return name.slice(0, 2).toUpperCase();
 }
 
+interface FriendHeaderProps {
+  friendId: string;
+  name: string;
+  avatarUrl?: string;
+}
+
 export function FriendHeader({
   friendId,
   name,
-  shortName,
   avatarUrl,
-  balances,
 }: FriendHeaderProps) {
   const navigate = useNavigate();
-
-  // Build balance lines — one line per (source, direction), multi-currency joined with " + "
-  const lineMap = new Map<string, { amounts: string[]; direction: "owed" | "owe"; source: "group" | "nonGroup" }>();
-  for (const b of balances) {
-    const direction = b.net > 0 ? "owed" : "owe";
-    const key = `${b.source}:${direction}`;
-    let entry = lineMap.get(key);
-    if (!entry) {
-      entry = { amounts: [], direction, source: b.source };
-      lineMap.set(key, entry);
-    }
-    entry.amounts.push(formatCurrency(Math.abs(b.net), b.currency));
-  }
-
-  const balanceLines: string[] = [];
-  for (const { amounts, direction, source } of lineMap.values()) {
-    const amountStr = amounts.join(" + ");
-    const suffix = source === "group" ? " in groups" : " individually";
-    if (direction === "owed") {
-      balanceLines.push(`${shortName} owes you ${amountStr}${suffix}`);
-    } else {
-      balanceLines.push(`You owe ${shortName} ${amountStr}${suffix}`);
-    }
-  }
 
   return (
     <div className="relative bg-gradient-to-br from-brand-dark to-brand px-4 pb-6 pt-[env(safe-area-inset-top)]">
@@ -91,37 +61,23 @@ export function FriendHeader({
         </button>
       </div>
 
-      {/* Avatar */}
-      <div className="mt-2">
+      {/* Friend name + avatar */}
+      <div className="mt-2 flex items-center gap-3">
         {avatarUrl ? (
           <img
             src={avatarUrl}
             alt={name}
-            className="h-16 w-16 rounded-full border-2 border-white/30 object-cover"
+            className="h-10 w-10 rounded-full object-cover ring-2 ring-white/30"
           />
         ) : (
           <div
-            className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-white/30 text-xl font-bold text-white"
-            style={{ backgroundColor: getAvatarColorHex(name) }}
+            className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold text-white ring-2 ring-white/30 ${getAvatarColor(name)}`}
           >
             {getInitials(name)}
           </div>
         )}
+        <h1 className="text-2xl font-bold text-white">{name}</h1>
       </div>
-
-      {/* Friend name */}
-      <h1 className="mt-3 text-2xl font-bold text-white">{name}</h1>
-
-      {/* Balance summary */}
-      {balanceLines.length === 0 ? (
-        <p className="mt-1 text-sm text-white/80">All settled up</p>
-      ) : (
-        <div className="mt-1 space-y-0.5">
-          {balanceLines.map((line, i) => (
-            <p key={i} className="text-sm text-white/80">{line}</p>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

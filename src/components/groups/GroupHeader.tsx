@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Settings, Calendar, Users } from "lucide-react";
+import { ChevronLeft, Settings, Users } from "lucide-react";
 import { Id } from "../../../convex/_generated/dataModel";
 
 interface GroupHeaderProps {
@@ -39,10 +39,6 @@ export function GroupHeader({
 
       {/* Badges */}
       <div className="mt-3 flex items-center gap-2">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-medium text-white">
-          <Calendar className="h-3 w-3" />
-          Group
-        </span>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-medium text-white">
           <Users className="h-3 w-3" />
           {memberCount} {memberCount === 1 ? "person" : "people"}

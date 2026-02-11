@@ -52,7 +52,6 @@ export function FriendDetailPage() {
   const hasNonGroupExpenses = data.nonGroupExpenses.length > 0;
   const isEmpty = !hasGroups && !hasNonGroupExpenses;
 
-  console.log("non group expenses", data.nonGroupExpenses);
   return (
     <div className="min-h-dvh bg-background">
       <div className="mx-auto w-full max-w-md pb-16">
@@ -60,10 +59,11 @@ export function FriendDetailPage() {
         <FriendHeader
           friendId={id}
           name={data.friend.name}
-          shortName={data.friend.shortName}
           avatarUrl={data.friend.avatarUrl}
-          balances={data.balancesByCurrency}
         />
+
+        {/* Balance summary */}
+        <BalanceSummary balances={data.balancesByCurrency} shortName={data.friend.shortName} />
 
         {/* Action buttons */}
         <div className="flex gap-2 overflow-x-auto px-4 py-4 scrollbar-hide">
@@ -241,6 +241,58 @@ function ExpenseEmptyState({ friendName }: { friendName: string }) {
   );
 }
 
+function BalanceSummary({
+  balances,
+  shortName,
+}: {
+  balances: Array<{ source: "group" | "nonGroup"; net: number; currency: string }>;
+  shortName: string;
+}) {
+  // Build balance lines — one line per (source, direction), multi-currency joined with " + "
+  const lineMap = new Map<string, { amounts: string[]; direction: "owed" | "owe"; source: "group" | "nonGroup" }>();
+  for (const b of balances) {
+    const direction = b.net > 0 ? "owed" : "owe";
+    const key = `${b.source}:${direction}`;
+    let entry = lineMap.get(key);
+    if (!entry) {
+      entry = { amounts: [], direction, source: b.source };
+      lineMap.set(key, entry);
+    }
+    entry.amounts.push(formatCurrency(Math.abs(b.net), b.currency));
+  }
+
+  const balanceLines: Array<{ prefix: string; amount: string; suffix: string; direction: "owed" | "owe" }> = [];
+  for (const { amounts, direction, source } of lineMap.values()) {
+    const amountStr = amounts.join(" + ");
+    const suffix = source === "group" ? " in groups" : " individually";
+    if (direction === "owed") {
+      balanceLines.push({ prefix: `${shortName} owes you `, amount: amountStr, suffix, direction });
+    } else {
+      balanceLines.push({ prefix: `You owe ${shortName} `, amount: amountStr, suffix, direction });
+    }
+  }
+
+  if (balanceLines.length === 0) {
+    return (
+      <p className="px-4 pt-3 text-sm text-muted-foreground">All settled up</p>
+    );
+  }
+
+  return (
+    <div className="space-y-0.5 px-4 pt-3">
+      {balanceLines.map((line, i) => (
+        <p key={i} className="text-sm text-muted-foreground">
+          {line.prefix}
+          <span className={`font-bold ${line.direction === "owed" ? "text-positive" : "text-negative"}`}>
+            {line.amount}
+          </span>
+          {line.suffix}
+        </p>
+      ))}
+    </div>
+  );
+}
+
 function LoadingSkeleton() {
   return (
     <div className="min-h-dvh bg-background">
@@ -250,8 +302,7 @@ function LoadingSkeleton() {
             <div className="h-9 w-9 animate-pulse rounded-full bg-white/20" />
             <div className="h-9 w-9 animate-pulse rounded-full bg-white/20" />
           </div>
-          <div className="mt-2 h-16 w-16 animate-pulse rounded-full bg-white/20" />
-          <div className="mt-3 h-7 w-40 animate-pulse rounded bg-white/20" />
+          <div className="mt-2 h-7 w-40 animate-pulse rounded bg-white/20" />
           <div className="mt-2 h-4 w-52 animate-pulse rounded bg-white/20" />
         </div>
         <div className="flex gap-2 px-4 py-4">

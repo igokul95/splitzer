@@ -9,12 +9,16 @@ interface GroupBreakdown {
   currency: string;
 }
 
+interface CurrencyBalance {
+  currency: string;
+  net: number;
+}
+
 interface FriendCardProps {
   friendId: Id<"users">;
   name: string;
   avatarUrl?: string;
-  net: number;
-  currency: string;
+  netByCurrency: CurrencyBalance[];
   groupBreakdowns: GroupBreakdown[];
 }
 
@@ -61,8 +65,7 @@ export function FriendCard({
   friendId,
   name,
   avatarUrl,
-  net,
-  currency,
+  netByCurrency,
   groupBreakdowns,
 }: FriendCardProps) {
   const hasGroupBreakdowns = groupBreakdowns.length > 0;
@@ -93,7 +96,7 @@ export function FriendCard({
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <div className="flex items-start justify-between gap-2">
           <span className="truncate font-medium leading-tight">{name}</span>
-          <BalanceLabel amount={net} currency={currency} />
+          <MultiCurrencyBalance balances={netByCurrency} />
         </div>
 
         {/* Per-group breakdowns (shown when multiple groups have balances) */}
@@ -115,14 +118,12 @@ export function FriendCard({
   );
 }
 
-function BalanceLabel({
-  amount,
-  currency,
+function MultiCurrencyBalance({
+  balances,
 }: {
-  amount: number;
-  currency: string;
+  balances: CurrencyBalance[];
 }) {
-  if (Math.abs(amount) < 0.01) {
+  if (balances.length === 0) {
     return (
       <span className="shrink-0 text-xs text-muted-foreground">
         settled up
@@ -130,22 +131,25 @@ function BalanceLabel({
     );
   }
 
-  if (amount > 0) {
-    return (
-      <div className="shrink-0 text-right">
-        <p className="text-xs font-medium text-positive">owes you</p>
-        <p className="text-sm font-bold text-positive">
-          {formatCurrency(amount, currency)}
-        </p>
-      </div>
-    );
-  }
+  // Show the largest absolute balance as primary
+  const sorted = [...balances].sort((a, b) => Math.abs(b.net) - Math.abs(a.net));
+  const primary = sorted[0];
+  const remaining = sorted.length - 1;
+
+  const isPositive = primary.net > 0;
+  const colorClass = isPositive ? "text-positive" : "text-negative";
+  const label = isPositive ? "owes you" : "you owe";
 
   return (
     <div className="shrink-0 text-right">
-      <p className="text-xs font-medium text-negative">you owe</p>
-      <p className="text-sm font-bold text-negative">
-        {formatCurrency(amount, currency)}
+      <p className={`text-xs font-medium ${colorClass}`}>{label}</p>
+      <p className={`text-sm font-bold ${colorClass}`}>
+        {formatCurrency(primary.net, primary.currency)}
+        {remaining > 0 && (
+          <span className="text-xs font-normal text-muted-foreground">
+            {" "}+ {remaining} more
+          </span>
+        )}
       </p>
     </div>
   );

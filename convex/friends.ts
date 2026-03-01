@@ -30,18 +30,12 @@ export const getMyFriends = query({
 
     const allFriendBalances = [...fbAsUser1, ...fbAsUser2];
 
-    // Map friendId -> friendBalance data for quick lookup
-    const fbByFriendId = new Map<
-      string,
-      { net: number; currency: string; lastActivityAt: number }
-    >();
+    // Map friendId -> lastActivityAt for quick lookup
+    const fbByFriendId = new Map<string, { lastActivityAt: number }>();
     for (const fb of allFriendBalances) {
       const isUser1 = fb.user1 === me._id;
       const friendId = isUser1 ? fb.user2 : fb.user1;
-      const net = isUser1 ? fb.totalAmount : -fb.totalAmount;
       fbByFriendId.set(friendId, {
-        net,
-        currency: fb.currency,
         lastActivityAt: fb.lastActivityAt,
       });
     }
@@ -124,10 +118,7 @@ export const getMyFriends = query({
         const friendId = fId as Id<"users">;
         const friend = await ctx.db.get(friendId);
 
-        // Use friendBalance data if it exists, otherwise defaults
         const fbData = fbByFriendId.get(fId);
-        const net = fbData?.net ?? 0;
-        const currency = fbData?.currency ?? me.defaultCurrency;
         const lastActivityAt = fbData?.lastActivityAt ?? now; // co-members without balance are "recent"
 
         // Get per-group breakdowns from balances table
@@ -144,6 +135,9 @@ export const getMyFriends = query({
           currency: string;
         }[] = [];
 
+        // Aggregate per-currency net for this friend
+        const currencyNetMap = new Map<string, number>();
+
         for (const bal of pairBalances) {
           if (Math.abs(bal.amount) < 0.005) continue;
           const balNet = u1 === me._id ? bal.amount : -bal.amount;
@@ -158,15 +152,26 @@ export const getMyFriends = query({
             amount: balNet,
             currency: bal.currency,
           });
+
+          currencyNetMap.set(
+            bal.currency,
+            (currencyNetMap.get(bal.currency) ?? 0) + balNet
+          );
         }
+
+        const netByCurrency = [...currencyNetMap.entries()]
+          .filter(([, net]) => Math.abs(net) >= 0.005)
+          .map(([currency, net]) => ({
+            currency,
+            net: Math.round(net * 100) / 100,
+          }));
 
         return {
           friendId,
           name: friend?.name ?? "Unknown",
           avatarUrl: friend?.avatarUrl,
           status: friend?.status ?? "invited",
-          net,
-          currency,
+          netByCurrency,
           lastActivityAt,
           groupBreakdowns: groupBreakdowns.sort(
             (a, b) => Math.abs(b.amount) - Math.abs(a.amount)
@@ -177,11 +182,11 @@ export const getMyFriends = query({
 
     // Split into visible and hidden
     const visible = friends
-      .filter((f) => f.net !== 0 || now - f.lastActivityAt < ONE_WEEK)
+      .filter((f) => f.netByCurrency.length > 0 || now - f.lastActivityAt < ONE_WEEK)
       .sort((a, b) => a.name.localeCompare(b.name));
 
     const hidden = friends
-      .filter((f) => f.net === 0 && now - f.lastActivityAt >= ONE_WEEK)
+      .filter((f) => f.netByCurrency.length === 0 && now - f.lastActivityAt >= ONE_WEEK)
       .sort((a, b) => a.name.localeCompare(b.name));
 
     return {

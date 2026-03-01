@@ -18,6 +18,7 @@ interface FriendCardProps {
   friendId: Id<"users">;
   name: string;
   avatarUrl?: string;
+  status?: "active" | "invited";
   netByCurrency: CurrencyBalance[];
   groupBreakdowns: GroupBreakdown[];
 }
@@ -29,7 +30,7 @@ function getInitials(name: string): string {
   return name.slice(0, 2).toUpperCase();
 }
 
-export function FriendCard({ friendId, name, avatarUrl, netByCurrency, groupBreakdowns }: FriendCardProps) {
+export function FriendCard({ friendId, name, avatarUrl, status, netByCurrency, groupBreakdowns }: FriendCardProps) {
   const visibleBreakdowns = groupBreakdowns.slice(0, 3);
   const hiddenCount = groupBreakdowns.length - visibleBreakdowns.length;
 
@@ -49,7 +50,14 @@ export function FriendCard({ friendId, name, avatarUrl, netByCurrency, groupBrea
             </div>
           )}
         </div>
-        <span className="min-w-0 flex-1 truncate text-[15px] text-foreground">{name}</span>
+        <div className="min-w-0 flex-1 flex items-center gap-2">
+          <span className="truncate text-[15px] text-foreground">{name}</span>
+          {status === "invited" && (
+            <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium bg-muted text-muted-foreground">
+              invited
+            </span>
+          )}
+        </div>
         <MultiCurrencyBalance balances={netByCurrency} />
       </div>
 

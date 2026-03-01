@@ -68,6 +68,7 @@ export function FriendsPage() {
                     friendId={friend.friendId}
                     name={friend.name}
                     avatarUrl={friend.avatarUrl}
+                    status={friend.status}
                     netByCurrency={friend.netByCurrency}
                     groupBreakdowns={friend.groupBreakdowns}
                   />
@@ -97,6 +98,7 @@ export function FriendsPage() {
                           friendId={friend.friendId}
                           name={friend.name}
                           avatarUrl={friend.avatarUrl}
+                          status={friend.status}
                           netByCurrency={friend.netByCurrency}
                           groupBreakdowns={friend.groupBreakdowns}
                         />

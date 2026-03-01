@@ -1,5 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { canonicalPair } from "./helpers";
+import { Id } from "./_generated/dataModel";
 
 /**
  * Get the current authenticated user by Clerk identity.
@@ -32,33 +34,55 @@ export const findOrCreateByContact = mutation({
     invitedBy: v.id("users"),
   },
   handler: async (ctx, args) => {
-    // Try to find by email first
+    // Find existing user by email or phone
+    let friendId: Id<"users"> | null = null;
+
     if (args.email) {
       const byEmail = await ctx.db
         .query("users")
         .withIndex("by_email", (q) => q.eq("email", args.email))
         .first();
-      if (byEmail) return byEmail._id;
+      if (byEmail) friendId = byEmail._id;
     }
 
-    // Try to find by phone
-    if (args.phone) {
+    if (!friendId && args.phone) {
       const byPhone = await ctx.db
         .query("users")
         .withIndex("by_phone", (q) => q.eq("phone", args.phone))
         .first();
-      if (byPhone) return byPhone._id;
+      if (byPhone) friendId = byPhone._id;
     }
 
-    // Create ghost user
-    return await ctx.db.insert("users", {
-      name: args.name,
-      email: args.email,
-      phone: args.phone,
-      status: "invited",
-      defaultCurrency: "INR",
-      invitedBy: args.invitedBy,
-    });
+    // Create ghost user if not found
+    if (!friendId) {
+      friendId = await ctx.db.insert("users", {
+        name: args.name,
+        email: args.email,
+        phone: args.phone,
+        status: "invited",
+        defaultCurrency: "INR",
+        invitedBy: args.invitedBy,
+      });
+    }
+
+    // Ensure a friendBalances entry exists so they appear in the Friends tab
+    const [u1, u2] = canonicalPair(args.invitedBy, friendId);
+    const existing = await ctx.db
+      .query("friendBalances")
+      .withIndex("by_pair", (q) => q.eq("user1", u1).eq("user2", u2))
+      .first();
+    if (!existing) {
+      const inviter = await ctx.db.get(args.invitedBy);
+      await ctx.db.insert("friendBalances", {
+        user1: u1,
+        user2: u2,
+        totalAmount: 0,
+        currency: inviter?.defaultCurrency ?? "INR",
+        lastActivityAt: Date.now(),
+      });
+    }
+
+    return friendId;
   },
 });
 

@@ -64,10 +64,20 @@ export const getMyFriends = query({
       }
     }
 
-    // ── Merge: build unique friend IDs from both sources ─────────────────
+    // ── Source 3: Users directly invited by me ───────────────────────────
+    const invitedByMe = await ctx.db
+      .query("users")
+      .withIndex("by_status", (q) => q.eq("status", "invited"))
+      .collect();
+    const invitedIds = new Set(
+      invitedByMe.filter((u) => u.invitedBy === me._id).map((u) => u._id as string)
+    );
+
+    // ── Merge: build unique friend IDs from all sources ──────────────────
     const allFriendIds = new Set<string>([
       ...fbByFriendId.keys(),
       ...coMemberIds,
+      ...invitedIds,
     ]);
 
     const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;

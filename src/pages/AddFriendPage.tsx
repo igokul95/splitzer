@@ -30,6 +30,17 @@ export function AddFriendPage() {
     const trimmedContact = contact.trim();
     const isEmail = trimmedContact.includes("@");
 
+    if (trimmedContact && viewer) {
+      const isSelf = isEmail
+        ? trimmedContact === viewer.email
+        : trimmedContact === viewer.phone;
+      if (isSelf) {
+        setError("You cannot add yourself as a friend");
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
     try {
       const friendId = await findOrCreate({
         name: name.trim(),
@@ -63,9 +74,9 @@ export function AddFriendPage() {
             <Input
               id="name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => { setName(e.target.value); setError(""); }}
               autoFocus
-              className="border-2 py-5 text-base"
+              className="border-2 py-5 text-base focus-visible:ring-0 focus-visible:shadow-none"
             />
           </div>
 
@@ -75,8 +86,8 @@ export function AddFriendPage() {
             <Input
               id="contact"
               value={contact}
-              onChange={(e) => setContact(e.target.value)}
-              className="border-2 py-5 text-base"
+              onChange={(e) => { setContact(e.target.value); setError(""); }}
+              className="border-2 py-5 text-base focus-visible:ring-0 focus-visible:shadow-none"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
@@ -96,7 +107,7 @@ export function AddFriendPage() {
           <button
             onClick={handleAdd}
             disabled={!name.trim() || isSubmitting}
-            className="w-full rounded-full bg-muted py-3 text-sm font-medium text-muted-foreground transition-colors enabled:bg-brand enabled:text-white enabled:hover:bg-brand-hover disabled:opacity-60"
+            className="w-full rounded-full bg-muted py-3 text-sm font-medium text-muted-foreground transition-colors enabled:bg-brand enabled:text-brand-foreground enabled:hover:bg-brand-hover disabled:opacity-60"
           >
             {isSubmitting ? "Adding..." : "Add friend"}
           </button>

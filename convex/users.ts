@@ -65,6 +65,10 @@ export const findOrCreateByContact = mutation({
       });
     }
 
+    if (friendId === args.invitedBy) {
+      throw new Error("You cannot add yourself as a friend");
+    }
+
     // Ensure a friendBalances entry exists so they appear in the Friends tab
     const [u1, u2] = canonicalPair(args.invitedBy, friendId);
     const existing = await ctx.db

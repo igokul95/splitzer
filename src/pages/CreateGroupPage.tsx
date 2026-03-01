@@ -23,11 +23,12 @@ const GROUP_TYPES: {
   value: GroupType;
   label: string;
   icon: React.ElementType;
+  iconColor: string;
 }[] = [
-  { value: "trip", label: "Trip", icon: Plane },
-  { value: "home", label: "Home", icon: Home },
-  { value: "couple", label: "Couple", icon: Heart },
-  { value: "other", label: "Other", icon: LayoutGrid },
+  { value: "trip", label: "Trip", icon: Plane, iconColor: "text-orange-400" },
+  { value: "home", label: "Home", icon: Home, iconColor: "text-brand" },
+  { value: "couple", label: "Couple", icon: Heart, iconColor: "text-pink-400" },
+  { value: "other", label: "Other", icon: LayoutGrid, iconColor: "text-muted-foreground" },
 ];
 
 export function CreateGroupPage() {
@@ -91,11 +92,14 @@ export function CreateGroupPage() {
     <MobileShell hideNav>
       <div className="flex flex-col pt-[env(safe-area-inset-top)]">
         {/* Header */}
-        <header className="flex items-center gap-3 py-4">
-          <button onClick={() => navigate("/groups")} className="p-1">
+        <header className="flex items-center gap-3 py-5">
+          <button
+            onClick={() => navigate("/groups")}
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card transition-colors hover:border-brand hover:text-brand"
+          >
             <ChevronLeft className="h-5 w-5" />
           </button>
-          <h1 className="text-lg font-bold">Create group</h1>
+          <h1 className="text-xl font-semibold">Create group</h1>
         </header>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6 pb-8">
@@ -123,13 +127,15 @@ export function CreateGroupPage() {
                     key={gt.value}
                     type="button"
                     onClick={() => setType(gt.value)}
-                    className={`flex flex-col items-center gap-1.5 rounded-xl border-2 p-3 text-xs font-medium transition-all ${
+                    className={`flex flex-col items-center gap-1.5 rounded-xl border p-3 text-xs font-medium transition-all ${
                       isSelected
-                        ? "border-brand bg-brand-light text-brand-dark"
+                        ? "border-brand text-foreground"
                         : "border-border bg-background text-muted-foreground hover:border-muted-foreground/30"
                     }`}
                   >
-                    <Icon className="h-5 w-5" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-muted">
+                      <Icon className={`h-4 w-4 ${gt.iconColor}`} />
+                    </div>
                     {gt.label}
                   </button>
                 );
@@ -151,20 +157,20 @@ export function CreateGroupPage() {
             {/* Member list */}
             <div className="space-y-2">
               {/* Creator (You) */}
-              <div className="flex items-center rounded-lg bg-muted/50 px-3 py-2.5">
+              <div className="flex items-center rounded-xl bg-muted/50 px-3 py-2.5">
                 <div className="flex items-center gap-2">
                   {viewer?.avatarUrl ? (
                     <img
                       src={viewer.avatarUrl}
                       alt=""
-                      className="h-8 w-8 rounded-full"
+                      className="h-8 w-8 rounded-lg object-cover"
                     />
                   ) : (
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-xs font-bold text-white">
                       {(viewer?.name ?? "Y").charAt(0).toUpperCase()}
                     </div>
                   )}
-                  <p className="text-sm font-medium">
+                  <p className="text-sm font-semibold">
                     {viewer?.name ?? "You"}
                   </p>
                 </div>
@@ -174,7 +180,7 @@ export function CreateGroupPage() {
               {pendingMembers.map((m, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2.5"
+                  className="flex items-center justify-between rounded-xl bg-muted/50 px-3 py-2.5"
                 >
                   <div className="flex items-center gap-2">
                     {m.avatarUrl ? (

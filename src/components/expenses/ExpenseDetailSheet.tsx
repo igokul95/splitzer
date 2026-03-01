@@ -2,36 +2,22 @@ import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { formatCurrency } from "@/lib/format";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
-import {
-  HandCoins,
-  Receipt,
-  ShoppingCart,
-  Utensils,
-  Car,
-  Home,
-  Zap,
-  Film,
-  Calendar,
-  Users,
-  StickyNote,
-  Layers,
-} from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { HandCoins, Receipt, ShoppingCart, Utensils, Car, Home, Zap, Film, Calendar, Users, StickyNote, Layers } from "lucide-react";
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
-  food: Utensils,
-  transport: Car,
-  housing: Home,
-  utilities: Zap,
-  entertainment: Film,
-  shopping: ShoppingCart,
-  general: Receipt,
+  food: Utensils, transport: Car, housing: Home, utilities: Zap,
+  entertainment: Film, shopping: ShoppingCart, general: Receipt,
+};
+
+const CATEGORY_COLORS: Record<string, { bg: string; icon: string }> = {
+  food: { bg: "bg-orange-900/30", icon: "text-orange-400" },
+  transport: { bg: "bg-sky-900/30", icon: "text-sky-400" },
+  housing: { bg: "bg-green-900/30", icon: "text-green-400" },
+  utilities: { bg: "bg-yellow-900/30", icon: "text-yellow-400" },
+  entertainment: { bg: "bg-purple-900/30", icon: "text-purple-400" },
+  shopping: { bg: "bg-pink-900/30", icon: "text-pink-400" },
+  general: { bg: "bg-muted", icon: "text-muted-foreground" },
 };
 
 function getCategoryIcon(category?: string): React.ElementType {
@@ -39,129 +25,68 @@ function getCategoryIcon(category?: string): React.ElementType {
   return CATEGORY_ICONS[category.toLowerCase()] ?? Receipt;
 }
 
-const SPLIT_METHOD_LABELS: Record<string, string> = {
-  equal: "Split equally",
-  exact: "Split by exact amounts",
-  percentage: "Split by percentages",
-  shares: "Split by shares",
-};
-
-interface ExpenseDetailSheetProps {
-  expenseId: Id<"expenses"> | null;
-  onClose: () => void;
+function getCategoryColors(category?: string, isSettlement = false) {
+  if (isSettlement) return { bg: "bg-brand-light", icon: "text-brand" };
+  if (!category) return CATEGORY_COLORS.general;
+  return CATEGORY_COLORS[category.toLowerCase()] ?? CATEGORY_COLORS.general;
 }
 
-export function ExpenseDetailSheet({
-  expenseId,
-  onClose,
-}: ExpenseDetailSheetProps) {
-  const data = useQuery(
-    api.expenses.getExpenseDetail,
-    expenseId ? { expenseId } : "skip"
-  );
+const SPLIT_METHOD_LABELS: Record<string, string> = {
+  equal: "Split equally", exact: "Exact amounts",
+  percentage: "By percentages", shares: "By shares",
+};
 
-  const isOpen = expenseId !== null;
+export function ExpenseDetailSheet({ expenseId, onClose }: { expenseId: Id<"expenses"> | null; onClose: () => void }) {
+  const data = useQuery(api.expenses.getExpenseDetail, expenseId ? { expenseId } : "skip");
 
   return (
-    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="bottom" className="max-h-[85dvh] overflow-y-auto rounded-t-2xl">
+    <Sheet open={expenseId !== null} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent side="bottom" className="max-h-[88dvh] overflow-y-auto rounded-t-xl bg-card border-border">
         {data ? (
           <>
-            <SheetHeader>
+            <SheetHeader className="px-4 pb-2">
               <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-muted">
-                  {data.isSettlement ? (
-                    <HandCoins className="h-5 w-5 text-muted-foreground" />
-                  ) : (
-                    (() => {
-                      const Icon = getCategoryIcon(data.category);
-                      return <Icon className="h-5 w-5 text-muted-foreground" />;
-                    })()
-                  )}
-                </div>
+                {(() => {
+                  const colors = getCategoryColors(data.category, data.isSettlement);
+                  const Icon = data.isSettlement ? HandCoins : getCategoryIcon(data.category);
+                  return (
+                    <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg ${colors.bg}`}>
+                      <Icon className={`h-6 w-6 ${colors.icon}`} />
+                    </div>
+                  );
+                })()}
                 <div className="min-w-0 flex-1">
-                  <SheetTitle className="text-lg">
-                    {data.description}
-                  </SheetTitle>
-                  <SheetDescription className="text-xl font-bold text-foreground">
+                  <SheetTitle className="text-base font-black tracking-tight">{data.description}</SheetTitle>
+                  <SheetDescription className="text-2xl font-black text-foreground">
                     {formatCurrency(data.totalAmount, data.currency)}
                   </SheetDescription>
                 </div>
               </div>
             </SheetHeader>
 
-            <div className="space-y-4 px-4 pb-6">
+            <div className="space-y-4 px-4 pb-8">
               {/* Meta info */}
-              <div className="space-y-2.5 rounded-lg bg-muted/30 p-3">
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Date</span>
-                  <span className="ml-auto font-medium">
-                    {new Date(data.date).toLocaleDateString("en", {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    })}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Receipt className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Paid by</span>
-                  <span className="ml-auto font-medium">{data.payerName}</span>
-                </div>
-                {data.groupName && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Group</span>
-                    <span className="ml-auto font-medium">{data.groupName}</span>
-                  </div>
-                )}
-                <div className="flex items-center gap-2 text-sm">
-                  <Layers className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Split</span>
-                  <span className="ml-auto font-medium">
-                    {SPLIT_METHOD_LABELS[data.splitMethod] ?? data.splitMethod}
-                  </span>
-                </div>
-                {data.notes && (
-                  <div className="flex items-start gap-2 text-sm">
-                    <StickyNote className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Notes</span>
-                    <span className="ml-auto text-right font-medium">
-                      {data.notes}
-                    </span>
-                  </div>
-                )}
+              <div className="overflow-hidden rounded-lg border border-border bg-muted">
+                <MetaRow icon={<Calendar className="h-4 w-4" />} label="Date" last={false}>
+                  {new Date(data.date).toLocaleDateString("en", { day: "numeric", month: "long", year: "numeric" })}
+                </MetaRow>
+                <MetaRow icon={<Receipt className="h-4 w-4" />} label="Paid by" last={false}>{data.payerName}</MetaRow>
+                {data.groupName && <MetaRow icon={<Users className="h-4 w-4" />} label="Group" last={false}>{data.groupName}</MetaRow>}
+                <MetaRow icon={<Layers className="h-4 w-4" />} label="Split" last={!data.notes}>
+                  {SPLIT_METHOD_LABELS[data.splitMethod] ?? data.splitMethod}
+                </MetaRow>
+                {data.notes && <MetaRow icon={<StickyNote className="h-4 w-4" />} label="Notes" last>{data.notes}</MetaRow>}
               </div>
 
               {/* Split breakdown */}
               <div>
-                <h4 className="mb-2 text-sm font-semibold text-muted-foreground">
-                  Split breakdown
-                </h4>
-                <div className="space-y-1.5">
-                  {data.splits.map((split) => (
-                    <div
-                      key={split.userId}
-                      className="flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2"
-                    >
-                      <span className="text-sm font-medium">
-                        {split.userName}
-                      </span>
-                      <span
-                        className={`text-sm font-bold ${
-                          split.netAmount > 0.005
-                            ? "text-positive"
-                            : split.netAmount < -0.005
-                              ? "text-negative"
-                              : "text-muted-foreground"
-                        }`}
-                      >
-                        {split.netAmount > 0.005
-                          ? `+${formatCurrency(split.netAmount, data.currency)}`
-                          : split.netAmount < -0.005
-                            ? `-${formatCurrency(split.netAmount, data.currency)}`
-                            : formatCurrency(0, data.currency)}
+                <h4 className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Split breakdown</h4>
+                <div className="overflow-hidden rounded-lg border border-border bg-muted">
+                  {data.splits.map((split, idx) => (
+                    <div key={split.userId} className={`flex items-center justify-between px-4 py-3 ${idx > 0 ? "border-t border-border" : ""}`}>
+                      <span className="text-sm font-bold">{split.userName}</span>
+                      <span className={`text-sm font-black ${split.netAmount > 0.005 ? "text-positive" : split.netAmount < -0.005 ? "text-negative" : "text-muted-foreground"}`}>
+                        {split.netAmount > 0.005 ? `+${formatCurrency(split.netAmount, data.currency)}` : split.netAmount < -0.005 ? `-${formatCurrency(Math.abs(split.netAmount), data.currency)}` : formatCurrency(0, data.currency)}
                       </span>
                     </div>
                   ))}
@@ -170,23 +95,28 @@ export function ExpenseDetailSheet({
             </div>
           </>
         ) : (
-          /* Loading state */
           <div className="space-y-4 p-4">
             <div className="flex items-center gap-3">
-              <div className="h-11 w-11 animate-pulse rounded-lg bg-muted" />
+              <div className="h-12 w-12 animate-pulse rounded-lg bg-muted" />
               <div className="flex-1 space-y-2">
                 <div className="h-5 w-32 animate-pulse rounded bg-muted" />
-                <div className="h-6 w-24 animate-pulse rounded bg-muted" />
+                <div className="h-7 w-24 animate-pulse rounded bg-muted" />
               </div>
             </div>
-            <div className="space-y-2">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-5 w-full animate-pulse rounded bg-muted" />
-              ))}
-            </div>
+            {[1, 2, 3].map((i) => <div key={i} className="h-12 animate-pulse rounded-lg bg-muted" />)}
           </div>
         )}
       </SheetContent>
     </Sheet>
+  );
+}
+
+function MetaRow({ icon, label, children, last }: { icon: React.ReactNode; label: string; children: React.ReactNode; last: boolean }) {
+  return (
+    <div className={`flex items-center gap-3 px-4 py-3 ${!last ? "border-b border-border" : ""}`}>
+      <span className="text-muted-foreground">{icon}</span>
+      <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
+      <span className="ml-auto text-sm font-semibold text-foreground">{children}</span>
+    </div>
   );
 }

@@ -39,7 +39,7 @@ export function FriendSettingsPage() {
           <button onClick={() => navigate(`/friends/${id}`)} className="p-1">
             <ChevronLeft className="h-5 w-5" />
           </button>
-          <h1 className="text-lg font-bold">{data.friend.name}</h1>
+          <h1 className="text-base font-semibold">{data.friend.name}</h1>
         </header>
 
         <div className="flex flex-col gap-6 pb-8">

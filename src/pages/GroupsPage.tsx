@@ -4,7 +4,7 @@ import { MobileShell } from "@/components/layout/MobileShell";
 import { GroupCard } from "@/components/groups/GroupCard";
 import { ExpenseFab } from "@/components/expenses/ExpenseFab";
 import { Link } from "react-router-dom";
-import { Search, Users, Plus } from "lucide-react";
+import { Users, Plus } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import type { GroupType } from "@/lib/format";
 
@@ -15,33 +15,25 @@ export function GroupsPage() {
     <MobileShell>
       <div className="flex flex-col pt-[env(safe-area-inset-top)]">
         {/* Header */}
-        <header className="flex items-center justify-between py-4">
-          <button className="p-1 text-foreground">
-            <Search className="h-5 w-5" />
-          </button>
+        <header className="flex items-center justify-between py-5">
+          <h1 className="text-xl">Groups</h1>
           <Link
             to="/groups/create"
-            className="text-sm font-medium text-brand"
+            className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground transition-all hover:border-brand hover:text-brand active:scale-95"
           >
-            Create group
+            <Plus className="h-4 w-4" />
+            New group
           </Link>
         </header>
 
-        {/* Content */}
         {data === undefined ? (
           <LoadingSkeleton />
         ) : data.groups.length === 0 ? (
           <EmptyState />
         ) : (
           <>
-            {/* Overall balance banner */}
-            <OverallBalance
-              amount={data.overallOwed}
-              currency={data.defaultCurrency}
-            />
-
-            {/* Group list */}
-            <div className="divide-y divide-border">
+            <OverallBalance amount={data.overallOwed} currency={data.defaultCurrency} />
+            <div className="mt-3 divide-y divide-border">
               {data.groups.map((group) => (
                 <GroupCard
                   key={group._id}
@@ -58,41 +50,28 @@ export function GroupsPage() {
         )}
       </div>
 
-      {/* FAB */}
       {data && data.groups.length > 0 && <ExpenseFab position="tabbed" />}
     </MobileShell>
   );
 }
 
-function OverallBalance({
-  amount,
-  currency,
-}: {
-  amount: number;
-  currency: string;
-}) {
+function OverallBalance({ amount, currency }: { amount: number; currency: string }) {
   if (Math.abs(amount) < 0.01) {
     return (
-      <div className="py-4">
-        <p className="text-sm text-muted-foreground">
-          You are all settled up!
-        </p>
+      <div className="mb-4 flex items-center gap-2 rounded-lg bg-card px-4 py-3">
+        <div className="h-1.5 w-1.5 rounded-full bg-positive" />
+        <p className="text-sm text-muted-foreground">All settled up</p>
       </div>
     );
   }
-
   const isOwed = amount > 0;
-
   return (
-    <div className="py-4">
-      <p className="text-sm">
-        Overall,{" "}
-        <span className={isOwed ? "text-positive" : "text-negative"}>
-          {isOwed ? "you are owed " : "you owe "}
-          <span className="font-bold">
-            {formatCurrency(amount, currency)}
-          </span>
-        </span>
+    <div className="mb-4 rounded-lg bg-card px-4 py-3">
+      <p className="mb-0.5 text-xs text-muted-foreground">
+        {isOwed ? "you're owed overall" : "you owe overall"}
+      </p>
+      <p className={`text-lg ${isOwed ? "text-positive" : "text-negative"}`}>
+        {isOwed ? "" : "−"}{formatCurrency(Math.abs(amount), currency)}
       </p>
     </div>
   );
@@ -100,19 +79,19 @@ function OverallBalance({
 
 function EmptyState() {
   return (
-    <div className="flex min-h-[60dvh] flex-col items-center justify-center gap-4 px-4">
-      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-light">
+    <div className="flex min-h-[60dvh] flex-col items-center justify-center gap-6 px-4">
+      <div className="flex h-20 w-20 items-center justify-center rounded-lg border border-border bg-card">
         <Users className="h-10 w-10 text-brand" />
       </div>
       <div className="text-center">
-        <h2 className="text-lg font-semibold">No groups yet</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <h2 className="text-xl font-black">No groups yet</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
           Create a group to start splitting expenses with friends.
         </p>
       </div>
       <Link
         to="/groups/create"
-        className="inline-flex items-center gap-2 rounded-full bg-brand px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
+        className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-6 py-3 text-sm font-semibold text-foreground transition-all hover:border-brand hover:text-brand active:scale-95"
       >
         <Plus className="h-4 w-4" />
         Create your first group
@@ -123,16 +102,23 @@ function EmptyState() {
 
 function LoadingSkeleton() {
   return (
-    <div className="space-y-4 py-4">
-      {[1, 2, 3].map((i) => (
-        <div key={i} className="flex items-start gap-3">
-          <div className="h-11 w-11 animate-pulse rounded-lg bg-muted" />
-          <div className="flex-1 space-y-2">
-            <div className="h-4 w-32 animate-pulse rounded bg-muted" />
-            <div className="h-3 w-48 animate-pulse rounded bg-muted" />
+    <div className="py-4">
+      <div className="h-20 animate-pulse rounded-lg bg-card mb-4" />
+      <div className="divide-y divide-border">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="flex items-center gap-3 py-3.5">
+            <div className="h-10 w-10 animate-pulse rounded-full bg-muted" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+              <div className="h-3 w-48 animate-pulse rounded bg-muted" />
+            </div>
+            <div className="space-y-1 text-right">
+              <div className="h-3 w-12 animate-pulse rounded bg-muted" />
+              <div className="h-4 w-16 animate-pulse rounded bg-muted" />
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }

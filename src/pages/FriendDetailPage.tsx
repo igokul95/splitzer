@@ -8,12 +8,28 @@ import { ExpenseRow } from "@/components/expenses/ExpenseRow";
 import { ExpenseDetailSheet } from "@/components/expenses/ExpenseDetailSheet";
 import { formatCurrency } from "@/lib/format";
 import {
-  HandCoins,
   Receipt,
-  Users,
   ChevronRight,
   CheckCircle2,
+  Plane,
+  Home,
+  Heart,
+  LayoutGrid,
 } from "lucide-react";
+
+const GROUP_TYPE_ICONS: Record<string, React.ElementType> = {
+  trip: Plane,
+  home: Home,
+  couple: Heart,
+  other: LayoutGrid,
+};
+
+const GROUP_TYPE_COLORS: Record<string, string> = {
+  trip: "text-orange-400",
+  home: "text-brand",
+  couple: "text-pink-400",
+  other: "text-muted-foreground",
+};
 import { ExpenseFab } from "@/components/expenses/ExpenseFab";
 import { BottomNav } from "@/components/layout/BottomNav";
 import {
@@ -45,7 +61,6 @@ export function FriendDetailPage() {
     return <LoadingSkeleton />;
   }
 
-  // Group non-group expenses by month-year
   const grouped: Record<string, typeof data.nonGroupExpenses> = {};
   data.nonGroupExpenses.forEach((exp) => {
     const key = new Date(exp.date).toLocaleDateString("en", {
@@ -59,7 +74,6 @@ export function FriendDetailPage() {
   const hasNonGroupExpenses = data.nonGroupExpenses.length > 0;
   const isEmpty = !hasGroups && !hasNonGroupExpenses;
 
-  // Compute per-currency net totals across all sources (group + nonGroup)
   const currencyTotals: Array<{ currency: string; net: number }> = [];
   {
     const map = new Map<string, number>();
@@ -93,31 +107,21 @@ export function FriendDetailPage() {
 
   return (
     <div className="min-h-dvh bg-background">
-      <div className="mx-auto w-full max-w-md pb-16">
-        {/* Hero header with balance summary */}
+      <div className="mx-auto w-full max-w-md pb-20">
         <FriendHeader
           friendId={id}
           name={data.friend.name}
           avatarUrl={data.friend.avatarUrl}
           {...buildBalanceLines(data.balancesByCurrency, data.friend.shortName)}
+          onSettleUp={currencyTotals.length > 0 ? () => {
+            if (!viewer || !data) return;
+            if (currencyTotals.length === 1) {
+              navigateToSettle(currencyTotals[0].currency, currencyTotals[0].net);
+            } else {
+              setShowCurrencyPicker(true);
+            }
+          } : undefined}
         />
-
-        {/* Action buttons */}
-        <div className="flex gap-2 overflow-x-auto px-4 py-4 scrollbar-hide">
-          <ActionButton
-            label="Settle up"
-            icon={HandCoins}
-            variant="primary"
-            onClick={() => {
-              if (!viewer || !data || currencyTotals.length === 0) return;
-              if (currencyTotals.length === 1) {
-                navigateToSettle(currencyTotals[0].currency, currencyTotals[0].net);
-              } else {
-                setShowCurrencyPicker(true);
-              }
-            }}
-          />
-        </div>
 
         <div className="pb-24">
           {isEmpty ? (
@@ -126,24 +130,28 @@ export function FriendDetailPage() {
             <>
               {/* Shared Groups */}
               {hasGroups && (
-                <div>
-                  <h3 className="px-4 py-3 text-sm font-semibold text-foreground">
-                    Groups
+                <div className="mb-4">
+                  <h3 className="px-4 pb-2 pt-3 text-xs text-muted-foreground">
+                    Shared groups
                   </h3>
-                  <div className="divide-y divide-border">
-                    {data.sharedGroups.map((group) => {
+                  <div className="mx-4 overflow-hidden rounded-lg border border-border bg-card">
+                    {data.sharedGroups.map((group, idx) => {
                       const isSettled = Math.abs(group.amount) < 0.005;
                       return (
                         <button
                           key={group.groupId}
                           onClick={() => navigate(`/groups/${group.groupId}`)}
-                          className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50 active:bg-muted"
+                          className={`flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-muted active:bg-muted ${idx > 0 ? "border-t border-border" : ""}`}
                         >
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-light">
-                            <Users className="h-5 w-5 text-brand-dark" />
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-muted">
+                            {(() => {
+                              const Icon = GROUP_TYPE_ICONS[group.groupType ?? "other"] ?? LayoutGrid;
+                              const color = GROUP_TYPE_COLORS[group.groupType ?? "other"] ?? "text-muted-foreground";
+                              return <Icon className={`h-5 w-5 ${color}`} />;
+                            })()}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium">
+                            <p className="truncate text-sm">
                               {group.groupName}
                             </p>
                             {isSettled ? (
@@ -157,11 +165,11 @@ export function FriendDetailPage() {
                               </p>
                             ) : (
                               <p className="text-xs text-negative">
-                                you owe {formatCurrency(group.amount, group.currency)}
+                                you owe {formatCurrency(Math.abs(group.amount), group.currency)}
                               </p>
                             )}
                           </div>
-                          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/50" />
                         </button>
                       );
                     })}
@@ -172,28 +180,29 @@ export function FriendDetailPage() {
               {/* Non-group Expenses */}
               {hasNonGroupExpenses && (
                 <div>
-                  <h3 className="px-4 py-3 text-sm font-semibold text-foreground">
+                  <h3 className="px-4 pb-2 pt-3 text-xs text-muted-foreground">
                     Non-group expenses
                   </h3>
                   {Object.entries(grouped).map(([monthYear, expenses]) => (
-                    <div key={monthYear}>
-                      <p className="px-4 py-2 text-xs text-muted-foreground">
+                    <div key={monthYear} className="mb-3">
+                      <p className="px-4 pb-1 text-xs text-muted-foreground">
                         {monthYear}
                       </p>
-                      <div className="divide-y divide-border">
-                        {expenses.map((exp) => (
-                          <ExpenseRow
-                            key={exp._id}
-                            description={exp.description}
-                            date={exp.date}
-                            category={exp.category}
-                            paidByName={exp.paidByName}
-                            paidByAmount={exp.paidByAmount}
-                            currency={exp.currency}
-                            isSettlement={exp.isSettlement}
-                            myInvolvement={exp.myInvolvement}
-                            onClick={() => setSelectedExpenseId(exp._id)}
-                          />
+                      <div className="mx-4 overflow-hidden rounded-2xl bg-card shadow-sm">
+                        {expenses.map((exp, idx) => (
+                          <div key={exp._id} className={idx > 0 ? "border-t border-border" : ""}>
+                            <ExpenseRow
+                              description={exp.description}
+                              date={exp.date}
+                              category={exp.category}
+                              paidByName={exp.paidByName}
+                              paidByAmount={exp.paidByAmount}
+                              currency={exp.currency}
+                              isSettlement={exp.isSettlement}
+                              myInvolvement={exp.myInvolvement}
+                              onClick={() => setSelectedExpenseId(exp._id)}
+                            />
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -217,22 +226,22 @@ export function FriendDetailPage() {
 
       {/* Currency picker for multi-currency settle up */}
       <Sheet open={showCurrencyPicker} onOpenChange={setShowCurrencyPicker}>
-        <SheetContent side="bottom" className="rounded-t-2xl">
+        <SheetContent side="bottom" className="rounded-t-xl bg-card border-border">
           <SheetHeader>
-            <SheetTitle>Which balance do you want to settle?</SheetTitle>
+            <SheetTitle className="text-base font-semibold">Which balance to settle?</SheetTitle>
           </SheetHeader>
-          <div className="space-y-2 pb-4 pt-2">
+          <div className="space-y-2 pb-6 px-4 pt-1">
             {currencyTotals.map((ct) => (
               <button
                 key={ct.currency}
-                className="flex w-full items-center justify-between rounded-lg border border-border px-4 py-3 transition-colors hover:bg-muted active:bg-muted"
+                className="flex w-full items-center justify-between rounded-lg border border-border bg-muted px-4 py-3.5 transition-all hover:border-brand active:scale-[0.98]"
                 onClick={() => {
                   setShowCurrencyPicker(false);
                   navigateToSettle(ct.currency, ct.net);
                 }}
               >
                 <div className="text-left">
-                  <p className="text-sm font-medium text-foreground">{ct.currency}</p>
+                  <p className="text-sm font-semibold text-foreground">{ct.currency}</p>
                   <p className="text-xs text-muted-foreground">
                     {ct.net > 0
                       ? `${data?.friend.shortName} owes you`
@@ -251,51 +260,16 @@ export function FriendDetailPage() {
   );
 }
 
-function ActionButton({
-  label,
-  icon: Icon,
-  variant,
-  onClick,
-}: {
-  label: string;
-  icon: React.ElementType;
-  variant: "primary" | "outline";
-  onClick: () => void;
-}) {
-  if (variant === "primary") {
-    return (
-      <button
-        onClick={onClick}
-        className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover active:scale-[0.98]"
-      >
-        <Icon className="h-4 w-4" />
-        {label}
-      </button>
-    );
-  }
-
-  return (
-    <button
-      onClick={onClick}
-      className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted active:scale-[0.98]"
-    >
-      <Icon className="h-4 w-4" />
-      {label}
-    </button>
-  );
-}
-
 function ExpenseEmptyState({ friendName }: { friendName: string }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 px-4 py-16">
-      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
-        <Receipt className="h-7 w-7 text-muted-foreground" />
+    <div className="flex flex-col items-center justify-center gap-4 px-4 py-16">
+      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
+        <Receipt className="h-8 w-8 text-muted-foreground" />
       </div>
       <div className="text-center">
-        <p className="text-sm font-medium">No shared expenses yet</p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Add an expense to start tracking what you and {friendName} owe each
-          other.
+        <p className="text-sm font-semibold">No shared expenses yet</p>
+        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+          Add an expense to start tracking what you and {friendName} owe each other.
         </p>
       </div>
     </div>
@@ -306,7 +280,6 @@ function buildBalanceLines(
   balances: Array<{ source: "group" | "nonGroup"; net: number; currency: string }>,
   shortName: string,
 ) {
-  // Total net per currency across all sources
   const totalMap = new Map<string, number>();
   for (const b of balances) {
     totalMap.set(b.currency, (totalMap.get(b.currency) ?? 0) + b.net);
@@ -321,7 +294,6 @@ function buildBalanceLines(
     });
   }
 
-  // Per-source breakdown
   const lineMap = new Map<string, { amounts: string[]; direction: "owed" | "owe"; source: "group" | "nonGroup" }>();
   for (const b of balances) {
     const direction = b.net > 0 ? "owed" : "owe";
@@ -337,7 +309,7 @@ function buildBalanceLines(
   const balanceLines: Array<{ prefix: string; amount: string; suffix: string; direction: "owed" | "owe" }> = [];
   for (const { amounts, direction, source } of lineMap.values()) {
     const amountStr = amounts.join(" + ");
-    const suffix = source === "group" ? " in groups" : " individually";
+    const suffix = source === "group" ? "Groups" : "Non-group";
     if (direction === "owed") {
       balanceLines.push({ prefix: `${shortName} owes you `, amount: amountStr, suffix, direction });
     } else {
@@ -351,37 +323,23 @@ function buildBalanceLines(
 function LoadingSkeleton() {
   return (
     <div className="min-h-dvh bg-background">
-      <div className="mx-auto w-full max-w-md pb-16">
-        <div className="bg-brand-dark px-4 pb-6 pt-[env(safe-area-inset-top)]">
+      <div className="mx-auto w-full max-w-md pb-20">
+        <div className="border-b border-border bg-card px-4 pb-5 pt-[env(safe-area-inset-top)]">
           <div className="flex items-center justify-between py-3">
-            <div className="h-9 w-9 animate-pulse rounded-full bg-white/20" />
-            <div className="h-9 w-9 animate-pulse rounded-full bg-white/20" />
+            <div className="h-9 w-9 animate-pulse rounded-lg bg-muted" />
+            <div className="h-9 w-9 animate-pulse rounded-lg bg-muted" />
           </div>
-          <div className="mt-2 h-7 w-40 animate-pulse rounded bg-white/20" />
-          <div className="mt-2 h-4 w-52 animate-pulse rounded bg-white/20" />
-        </div>
-        <div className="flex gap-2 px-4 py-4">
-          {[1].map((i) => (
-            <div
-              key={i}
-              className="h-9 w-24 animate-pulse rounded-full bg-muted"
-            />
-          ))}
-        </div>
-        <div className="space-y-4 px-4">
-          <div className="h-4 w-32 animate-pulse rounded bg-muted" />
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="flex items-center gap-3">
-              <div className="h-10 w-10 animate-pulse rounded-lg bg-muted" />
-              <div className="flex-1 space-y-2">
-                <div className="h-4 w-28 animate-pulse rounded bg-muted" />
-                <div className="h-3 w-36 animate-pulse rounded bg-muted" />
-              </div>
-              <div className="space-y-1 text-right">
-                <div className="ml-auto h-3 w-20 animate-pulse rounded bg-muted" />
-                <div className="ml-auto h-4 w-16 animate-pulse rounded bg-muted" />
-              </div>
+          <div className="flex items-center gap-3 pt-1">
+            <div className="h-14 w-14 animate-pulse rounded-full bg-muted" />
+            <div className="space-y-2">
+              <div className="h-5 w-32 animate-pulse rounded bg-muted" />
+              <div className="h-4 w-20 animate-pulse rounded bg-muted" />
             </div>
+          </div>
+        </div>
+        <div className="space-y-3 p-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-16 animate-pulse rounded-2xl bg-muted" />
           ))}
         </div>
       </div>

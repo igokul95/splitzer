@@ -37,11 +37,12 @@ const GROUP_TYPES: {
   value: GroupType;
   label: string;
   icon: React.ElementType;
+  iconColor: string;
 }[] = [
-  { value: "trip", label: "Trip", icon: Plane },
-  { value: "home", label: "Home", icon: Home },
-  { value: "couple", label: "Couple", icon: Heart },
-  { value: "other", label: "Other", icon: LayoutGrid },
+  { value: "trip", label: "Trip", icon: Plane, iconColor: "text-orange-400" },
+  { value: "home", label: "Home", icon: Home, iconColor: "text-brand" },
+  { value: "couple", label: "Couple", icon: Heart, iconColor: "text-pink-400" },
+  { value: "other", label: "Other", icon: LayoutGrid, iconColor: "text-muted-foreground" },
 ];
 
 export function GroupSettingsPage() {
@@ -154,7 +155,7 @@ export function GroupSettingsPage() {
           <button onClick={() => navigate(`/groups/${id}`)} className="p-1">
             <ChevronLeft className="h-5 w-5" />
           </button>
-          <h1 className="text-lg font-bold">Group settings</h1>
+          <h1 className="text-base font-semibold">Group settings</h1>
         </header>
 
         <div className="flex flex-col gap-6 pb-8">
@@ -179,13 +180,15 @@ export function GroupSettingsPage() {
                     type="button"
                     onClick={() => handleSave({ type: gt.value })}
                     disabled={isSaving}
-                    className={`flex flex-col items-center gap-1.5 rounded-xl border-2 p-3 text-xs font-medium transition-all ${
+                    className={`flex flex-col items-center gap-1.5 rounded-xl border p-3 text-xs font-medium transition-all ${
                       isSelected
-                        ? "border-brand bg-brand-light text-brand-dark"
+                        ? "border-brand text-foreground"
                         : "border-border bg-background text-muted-foreground hover:border-muted-foreground/30"
                     }`}
                   >
-                    <Icon className="h-5 w-5" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-muted">
+                      <Icon className={`h-4 w-4 ${gt.iconColor}`} />
+                    </div>
                     {gt.label}
                   </button>
                 );

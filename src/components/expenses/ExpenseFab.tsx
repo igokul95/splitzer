@@ -1,13 +1,8 @@
 import { useNavigate } from "react-router-dom";
-import { Camera, ImageIcon, Receipt, Loader2 } from "lucide-react";
+import { Camera, ImageIcon, Loader2, Plus } from "lucide-react";
 import { useReceiptScanner } from "@/hooks/useReceiptScanner";
 import { CameraCapture } from "./CameraCapture";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 interface ExpenseFabProps {
   position: "tabbed" | "detail";
@@ -16,50 +11,30 @@ interface ExpenseFabProps {
 
 export function ExpenseFab({ position, locationState }: ExpenseFabProps) {
   const navigate = useNavigate();
-  const {
-    scanning,
-    error,
-    fileInputRef,
-    triggerScan,
-    handleFileChange,
-    showCamera,
-    closeCamera,
-    fallbackToFileInput,
-    handleCapture,
-    showPicker,
-    closePicker,
-    chooseCamera,
-    chooseMedia,
-  } = useReceiptScanner({ locationState });
+  const { scanning, error, fileInputRef, triggerScan, handleFileChange, showCamera, closeCamera, fallbackToFileInput, handleCapture, showPicker, closePicker, chooseCamera, chooseMedia } = useReceiptScanner({ locationState });
 
-  const bottomClass = position === "tabbed" ? "bottom-20" : "bottom-6";
+  const bottomClass = position === "tabbed" ? "bottom-22" : "bottom-6";
 
   return (
     <>
-      {showCamera && (
-        <CameraCapture
-          onCapture={handleCapture}
-          onClose={closeCamera}
-          onFallback={fallbackToFileInput}
-        />
-      )}
+      {showCamera && <CameraCapture onCapture={handleCapture} onClose={closeCamera} onFallback={fallbackToFileInput} />}
 
       <Sheet open={showPicker} onOpenChange={(open) => !open && closePicker()}>
-        <SheetContent side="bottom" showCloseButton={false} className="rounded-t-2xl pb-8">
+        <SheetContent side="bottom" showCloseButton={false} className="rounded-t-xl pb-8 bg-card border-border">
           <SheetHeader>
-            <SheetTitle>Scan receipt</SheetTitle>
+            <SheetTitle className="text-base font-semibold">Scan receipt</SheetTitle>
           </SheetHeader>
           <div className="flex gap-3 px-4">
             <button
               onClick={chooseCamera}
-              className="flex flex-1 flex-col items-center gap-2 rounded-xl border border-border bg-muted/50 py-6 text-sm font-medium transition-colors hover:bg-muted active:scale-95"
+              className="flex flex-1 flex-col items-center gap-2 rounded-lg border border-border bg-muted py-6 text-sm font-semibold transition-all hover:border-brand hover:text-brand active:scale-95"
             >
               <Camera className="h-6 w-6" />
               Camera
             </button>
             <button
               onClick={chooseMedia}
-              className="flex flex-1 flex-col items-center gap-2 rounded-xl border border-border bg-muted/50 py-6 text-sm font-medium transition-colors hover:bg-muted active:scale-95"
+              className="flex flex-1 flex-col items-center gap-2 rounded-lg border border-border bg-muted py-6 text-sm font-semibold transition-all hover:border-brand hover:text-brand active:scale-95"
             >
               <ImageIcon className="h-6 w-6" />
               Media
@@ -69,51 +44,29 @@ export function ExpenseFab({ position, locationState }: ExpenseFabProps) {
       </Sheet>
 
       <div className={`fixed ${bottomClass} right-4 z-50 flex flex-col items-end gap-2`}>
-        {/* Error toast */}
         {error && (
-          <div className="rounded-lg bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive shadow-md">
+          <div className="rounded-lg border border-negative/30 bg-negative-light px-3 py-2 text-xs font-bold text-negative shadow-lg">
             {error}
           </div>
         )}
 
-        {/* Scan receipt button */}
         <button
           onClick={triggerScan}
           disabled={scanning}
-          className="flex items-center gap-2 rounded-full border border-border bg-white px-5 py-3 text-sm font-medium text-foreground shadow-lg transition-all hover:bg-muted active:scale-95 disabled:opacity-70"
+          className="flex items-center gap-2 rounded-lg border border-border bg-card px-5 py-3 text-sm font-semibold text-foreground shadow-lg transition-all hover:border-brand hover:text-brand active:scale-95 disabled:opacity-70"
         >
-          {scanning ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Scanning...
-            </>
-          ) : (
-            <>
-              <Camera className="h-4 w-4" />
-              Scan receipt
-            </>
-          )}
+          {scanning ? <><Loader2 className="h-4 w-4 animate-spin" />Scanning...</> : <><Camera className="h-4 w-4" />Scan</>}
         </button>
 
-        {/* Add expense button */}
         <button
-          className="flex items-center gap-2 rounded-full bg-brand px-5 py-3 text-sm font-medium text-white shadow-lg transition-all hover:bg-brand-hover active:scale-95"
-          onClick={() =>
-            navigate("/expenses/add", locationState ? { state: locationState } : undefined)
-          }
+          className="flex items-center gap-2 rounded-lg bg-brand px-5 py-3 text-sm font-semibold text-brand-foreground shadow-lg transition-all hover:bg-brand-hover active:scale-95"
+          onClick={() => navigate("/expenses/add", locationState ? { state: locationState } : undefined)}
         >
-          <Receipt className="h-4 w-4" />
+          <Plus className="h-4 w-4" />
           Add expense
         </button>
 
-        {/* Hidden file input for fallback */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          className="hidden"
-        />
+        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
       </div>
     </>
   );

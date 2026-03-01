@@ -257,6 +257,7 @@ export const getFriendDetail = query({
     const sharedGroups: {
       groupId: Id<"groups">;
       groupName: string;
+      groupType?: string;
       amount: number;
       currency: string;
     }[] = [];
@@ -268,6 +269,7 @@ export const getFriendDetail = query({
       sharedGroups.push({
         groupId: gId,
         groupName: group.name,
+        groupType: group.type,
         amount: bal?.amount ?? 0,
         currency: bal?.currency ?? me.defaultCurrency,
       });

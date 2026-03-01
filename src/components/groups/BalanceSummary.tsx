@@ -1,4 +1,3 @@
-import { Info } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import { Id } from "../../../convex/_generated/dataModel";
 
@@ -15,72 +14,30 @@ interface BalanceSummaryProps {
   balances: BalanceDetail[];
 }
 
-export function BalanceSummary({
-  myNet,
-  defaultCurrency,
-  balances,
-}: BalanceSummaryProps) {
+export function BalanceSummary({ myNet, defaultCurrency, balances }: BalanceSummaryProps) {
   if (balances.length === 0 || Math.abs(myNet) < 0.01) {
     return (
-      <div className="flex items-center gap-2 px-4 py-3">
-        <p className="text-sm text-muted-foreground">
-          You are all settled up in this group
-        </p>
+      <div className="mx-4 my-3 flex items-center gap-2 rounded-lg border border-positive/30 bg-positive-light px-4 py-3">
+        <span className="text-xs text-positive">✓ All settled up</span>
       </div>
     );
   }
 
-  // Find the largest balance to display as primary
   const primaryBalance = balances[0];
   const isOwed = myNet > 0;
 
   return (
-    <div className="flex items-center gap-2 px-4 py-3">
-      <p className="text-sm">
-        {isOwed ? (
-          <>
-            {balances.length === 1 ? (
-              <>
-                <span className="font-medium">{primaryBalance.name}</span>
-                {" owes you "}
-                <span className="font-bold text-positive">
-                  {formatCurrency(primaryBalance.amount, primaryBalance.currency)}
-                </span>
-              </>
-            ) : (
-              <>
-                {"You are owed "}
-                <span className="font-bold text-positive">
-                  {formatCurrency(myNet, defaultCurrency)}
-                </span>
-                {" overall"}
-              </>
-            )}
-          </>
-        ) : (
-          <>
-            {balances.length === 1 ? (
-              <>
-                {"You owe "}
-                <span className="font-medium">{primaryBalance.name}</span>
-                {" "}
-                <span className="font-bold text-negative">
-                  {formatCurrency(primaryBalance.amount, primaryBalance.currency)}
-                </span>
-              </>
-            ) : (
-              <>
-                {"You owe "}
-                <span className="font-bold text-negative">
-                  {formatCurrency(myNet, defaultCurrency)}
-                </span>
-                {" overall"}
-              </>
-            )}
-          </>
-        )}
+    <div className={`mx-4 my-3 rounded-lg border px-4 py-3 ${isOwed ? "border-positive/30 bg-positive-light" : "border-negative/30 bg-negative-light"}`}>
+      <p className="text-xs text-muted-foreground">Your balance</p>
+      <p className={`mt-1 text-lg ${isOwed ? "text-positive" : "text-negative"}`}>
+        {isOwed ? "+" : "-"}{formatCurrency(Math.abs(primaryBalance.amount), primaryBalance.currency)}
       </p>
-      <Info className="h-4 w-4 shrink-0 text-muted-foreground" />
+      <p className={`text-xs ${isOwed ? "text-positive" : "text-negative"}`}>
+        {isOwed
+          ? balances.length === 1 ? `${primaryBalance.name} owes you` : "you are owed overall"
+          : balances.length === 1 ? `you owe ${primaryBalance.name}` : "you owe overall"
+        }
+      </p>
     </div>
   );
 }

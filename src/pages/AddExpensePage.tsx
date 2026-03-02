@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
@@ -191,20 +191,13 @@ export function AddExpensePage() {
   // Shares split state
   const [sharesMap, setSharesMap] = useState<Record<string, string>>({});
 
-  // Initialize equal included when participants load
+  // Sync equalIncluded whenever the participant list changes
   const participantIds = participants.map((p) => p.userId).join(",");
-  useState(() => {
-    if (participants.length > 0 && equalIncluded.size === 0) {
+  useEffect(() => {
+    if (participants.length > 0) {
       setEqualIncluded(new Set(participants.map((p) => p.userId)));
     }
-  });
-
-  // Re-init if participants change
-  useMemo(() => {
-    if (participants.length > 0 && equalIncluded.size === 0) {
-      setEqualIncluded(new Set(participants.map((p) => p.userId)));
-    }
-  }, [participantIds]);
+  }, [participantIds]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const amount = parseFloat(amountStr) || 0;
 

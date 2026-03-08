@@ -28,7 +28,7 @@ import {
   Film,
   ShoppingCart,
   Check,
-  Users,
+  Plus,
 } from "lucide-react";
 import { UserAvatar } from "@/components/shared/UserAvatar";
 import { GroupIcon } from "@/components/shared/GroupIcon";
@@ -46,6 +46,12 @@ interface LocationState {
   };
 }
 
+interface Person {
+  userId: Id<"users">;
+  name: string;
+  avatarUrl?: string | null;
+}
+
 const CATEGORIES = [
   { id: "general", label: "General", icon: Receipt },
   { id: "food", label: "Food", icon: Utensils },
@@ -61,46 +67,35 @@ export function AddExpensePage() {
   const location = useLocation();
   const state = (location.state as LocationState) ?? {};
 
-  // Selection state: when no context provided, user picks friend or group first
+  // Whether we need a selection screen first
   const needsSelection = !state.groupId && !state.friendId;
-  const [selectedContext, setSelectedContext] = useState<{
-    type: "friend" | "group";
-    id: string;
-  } | null>(null);
 
-  const viewer = useQuery(api.users.getViewer);
-  const addExpense = useMutation(api.expenses.addExpense);
+  // Whether we've moved past the selection screen
+  const [formShown, setFormShown] = useState(!needsSelection);
 
-  // Effective IDs: from route state or user selection
-  const effectiveGroupId =
-    state.groupId ?? (selectedContext?.type === "group" ? selectedContext.id : undefined);
-  const effectiveFriendId =
-    state.friendId ?? (selectedContext?.type === "friend" ? selectedContext.id : undefined);
-
-  // If groupId, load group for members and name
-  const group = useQuery(
-    api.groups.getGroup,
-    effectiveGroupId ? { groupId: effectiveGroupId as Id<"groups"> } : "skip"
+  // Active group context: used for getGroup query + mutation groupId
+  const [activeGroupId, setActiveGroupId] = useState<string | null>(
+    state.groupId ?? null
   );
 
-  // If friendId, load friend detail
-  const friendDetail = useQuery(
-    api.friends.getFriendDetail,
-    effectiveFriendId ? { friendId: effectiveFriendId as Id<"users"> } : "skip"
-  );
+  // Group chip display: true = show group as one chip
+  // User can clear it to switch to individual member chips
+  const [showGroupChip, setShowGroupChip] = useState<boolean>(!!state.groupId);
 
-  // Load friends + groups for the selection screen (only when needed)
-  const friendsData = useQuery(
-    api.friends.getMyFriends,
-    needsSelection && !selectedContext ? {} : "skip"
-  );
-  const groupsData = useQuery(
-    api.groups.getMyGroups,
-    needsSelection && !selectedContext ? {} : "skip"
-  );
+  // Individual participant chips (non-viewer people)
+  const [withPeople, setWithPeople] = useState<Person[]>([]);
+
+  // Selection screen: people being assembled before confirming
+  const [selectionPeople, setSelectionPeople] = useState<Person[]>([]);
   const [selectionSearch, setSelectionSearch] = useState("");
 
-  // Form state (prefill from receipt data if available)
+  // Sheet states
+  const [showPayerSheet, setShowPayerSheet] = useState(false);
+  const [showSplitSheet, setShowSplitSheet] = useState(false);
+  const [showCategorySheet, setShowCategorySheet] = useState(false);
+  const [showNotesSheet, setShowNotesSheet] = useState(false);
+
+  // Form fields
   const [description, setDescription] = useState(
     state.receiptData?.description ?? ""
   );
@@ -117,21 +112,60 @@ export function AddExpensePage() {
   const [notes, setNotes] = useState("");
   const [splitMethod, setSplitMethod] = useState<SplitMethod>("equal");
   const [saving, setSaving] = useState(false);
-
-  // Sheet states
-  const [showPayerSheet, setShowPayerSheet] = useState(false);
-  const [showSplitSheet, setShowSplitSheet] = useState(false);
-  const [showCategorySheet, setShowCategorySheet] = useState(false);
-  const [showNotesSheet, setShowNotesSheet] = useState(false);
-
-  // Payer selection
   const [payerId, setPayerId] = useState<Id<"users"> | null>(null);
 
-  // Build participants list from group or friend context
+  // Split state
+  const [equalIncluded, setEqualIncluded] = useState<Set<string>>(new Set());
+  const [exactAmounts, setExactAmounts] = useState<Record<string, string>>({});
+  const [percentages, setPercentages] = useState<Record<string, string>>({});
+  const [sharesMap, setSharesMap] = useState<Record<string, string>>({});
+
+  // ─── Queries ────────────────────────────────────────────────────────────────
+
+  const viewer = useQuery(api.users.getViewer);
+  const addExpense = useMutation(api.expenses.addExpense);
+
+  const group = useQuery(
+    api.groups.getGroup,
+    activeGroupId ? { groupId: activeGroupId as Id<"groups"> } : "skip"
+  );
+
+  const friendDetail = useQuery(
+    api.friends.getFriendDetail,
+    state.friendId ? { friendId: state.friendId as Id<"users"> } : "skip"
+  );
+
+  // Selection screen queries (also used when navigating back to edit participants)
+  const friendsData = useQuery(
+    api.friends.getMyFriends,
+    !formShown ? {} : "skip"
+  );
+  const groupsData = useQuery(
+    api.groups.getMyGroups,
+    !formShown && needsSelection ? {} : "skip"
+  );
+
+  // ─── Init effects ────────────────────────────────────────────────────────────
+
+  // When navigating from FriendPage (state.friendId), init withPeople from friendDetail
+  useEffect(() => {
+    if (friendDetail && state.friendId && withPeople.length === 0) {
+      setWithPeople([
+        {
+          userId: friendDetail.friend._id,
+          name: friendDetail.friend.name,
+          avatarUrl: friendDetail.friend.avatarUrl,
+        },
+      ]);
+    }
+  }, [friendDetail?.friend._id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ─── Derived: participants ────────────────────────────────────────────────────
+
   const participants = useMemo(() => {
     if (!viewer) return [];
 
-    if (group) {
+    if (showGroupChip && group) {
       return group.members.map((m) => ({
         userId: m.userId,
         name: m.userId === viewer._id ? "You" : m.name,
@@ -139,44 +173,14 @@ export function AddExpensePage() {
       }));
     }
 
-    if (friendDetail) {
-      return [
-        { userId: viewer._id, name: "You", avatarUrl: viewer.avatarUrl },
-        {
-          userId: friendDetail.friend._id,
-          name: friendDetail.friend.name,
-          avatarUrl: friendDetail.friend.avatarUrl,
-        },
-      ];
-    }
+    // Individual chip mode
+    return [
+      { userId: viewer._id, name: "You", avatarUrl: viewer.avatarUrl },
+      ...withPeople.filter((p) => p.userId !== viewer._id),
+    ];
+  }, [viewer, group, showGroupChip, withPeople]);
 
-    // No context — just the current user
-    return [{ userId: viewer._id, name: "You", avatarUrl: viewer.avatarUrl }];
-  }, [viewer, group, friendDetail]);
-
-  // Effective currency
-  const effectiveCurrency =
-    currency ??
-    group?.defaultCurrency ??
-    viewer?.defaultCurrency ??
-    "INR";
-
-  // Set default payer to viewer
-  const effectivePayerId = payerId ?? viewer?._id ?? null;
-
-  // Equal split state: which participants are included
-  const [equalIncluded, setEqualIncluded] = useState<Set<string>>(new Set());
-
-  // Exact split state
-  const [exactAmounts, setExactAmounts] = useState<Record<string, string>>({});
-
-  // Percentage split state
-  const [percentages, setPercentages] = useState<Record<string, string>>({});
-
-  // Shares split state
-  const [sharesMap, setSharesMap] = useState<Record<string, string>>({});
-
-  // Sync equalIncluded whenever the participant list changes
+  // Sync equalIncluded whenever participants change
   const participantIds = participants.map((p) => p.userId).join(",");
   useEffect(() => {
     if (participants.length > 0) {
@@ -184,13 +188,14 @@ export function AddExpensePage() {
     }
   }, [participantIds]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const amount = parseFloat(amountStr) || 0;
+  // ─── Other derived ───────────────────────────────────────────────────────────
 
-  const contextLabel = group
-    ? group.name
-    : friendDetail
-      ? `you and ${friendDetail.friend.name}`
-      : "non-group";
+  const effectiveCurrency =
+    currency ?? group?.defaultCurrency ?? viewer?.defaultCurrency ?? "INR";
+
+  const effectivePayerId = payerId ?? viewer?._id ?? null;
+
+  const amount = parseFloat(amountStr) || 0;
 
   const payerName = effectivePayerId
     ? participants.find((p) => p.userId === effectivePayerId)?.name ?? "someone"
@@ -205,12 +210,13 @@ export function AddExpensePage() {
           ? "by percentages"
           : "by shares";
 
+  // ─── Save ────────────────────────────────────────────────────────────────────
+
   async function handleSave() {
     if (!viewer || !effectivePayerId || amount <= 0 || !description.trim()) return;
 
     setSaving(true);
     try {
-      // Compute splits
       let splits;
       const participantList = participants.map((p) => ({
         userId: p.userId,
@@ -229,9 +235,7 @@ export function AddExpensePage() {
         splits = computeExactSplit(amount, entries, effectivePayerId);
       } else if (splitMethod === "percentage") {
         const entries = participants
-          .filter(
-            (p) => (parseFloat(percentages[p.userId] ?? "0") || 0) > 0
-          )
+          .filter((p) => (parseFloat(percentages[p.userId] ?? "0") || 0) > 0)
           .map((p) => ({
             userId: p.userId,
             percentage: parseFloat(percentages[p.userId] ?? "0") || 0,
@@ -253,9 +257,7 @@ export function AddExpensePage() {
       }
 
       await addExpense({
-        groupId: effectiveGroupId
-          ? (effectiveGroupId as Id<"groups">)
-          : undefined,
+        groupId: activeGroupId ? (activeGroupId as Id<"groups">) : undefined,
         paidBy: effectivePayerId,
         description: description.trim(),
         totalAmount: amount,
@@ -286,10 +288,11 @@ export function AddExpensePage() {
     description.trim().length > 0 &&
     amount > 0 &&
     effectivePayerId &&
+    participants.length >= 2 &&
     !saving;
 
-  // ── Selection Screen ───────────────────────────────────────────────────────
-  if (needsSelection && !selectedContext) {
+  // ── Selection Screen (also shown when editing participants from the form) ─────
+  if (!formShown) {
     const searchLower = selectionSearch.toLowerCase();
 
     const allFriends = [
@@ -307,13 +310,35 @@ export function AddExpensePage() {
 
     const isLoading = !friendsData && !groupsData;
 
+    function toggleSelectionPerson(friend: {
+      friendId: string;
+      name: string;
+      avatarUrl?: string | null;
+    }) {
+      setSelectionPeople((prev) => {
+        const exists = prev.some((p) => p.userId === friend.friendId);
+        if (exists) return prev.filter((p) => p.userId !== friend.friendId);
+        return [
+          ...prev,
+          { userId: friend.friendId as Id<"users">, name: friend.name, avatarUrl: friend.avatarUrl },
+        ];
+      });
+    }
+
     return (
       <div className="min-h-dvh bg-background">
-        <div className="mx-auto w-full max-w-md">
+        <div className="mx-auto w-full max-w-md flex flex-col h-dvh">
           {/* Top bar */}
-          <div className="flex items-center justify-between px-4 py-3 pt-[env(safe-area-inset-top)]">
+          <div className="flex items-center justify-between px-4 py-3 pt-[env(safe-area-inset-top)] shrink-0">
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => {
+                // If we navigated back from the form to edit, go back to the form
+                if (!needsSelection) {
+                  setFormShown(true);
+                } else {
+                  navigate(-1);
+                }
+              }}
               className="rounded-full p-2 text-foreground hover:bg-muted"
             >
               <X className="h-5 w-5" />
@@ -322,19 +347,44 @@ export function AddExpensePage() {
             <div className="w-14" />
           </div>
 
-          {/* Search */}
-          <div className="flex items-center gap-2 border-b border-border px-4 py-2">
-            <span className="shrink-0 text-sm text-muted-foreground">
-              With you and:
-            </span>
-            <input
-              type="text"
-              placeholder="Enter names, emails, or phone #s"
-              value={selectionSearch}
-              onChange={(e) => setSelectionSearch(e.target.value)}
-              className="flex-1 bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
-              autoFocus
-            />
+          {/* With bar: chips + search */}
+          <div className="border-b border-border px-4 py-2 shrink-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="shrink-0 text-sm text-muted-foreground">
+                With you and:
+              </span>
+              {/* Selected person chips */}
+              {selectionPeople.map((p) => (
+                <span
+                  key={p.userId}
+                  className="flex items-center gap-1 rounded-full bg-brand/10 border border-brand/30 pl-2 pr-1 py-0.5 text-xs font-medium text-brand"
+                >
+                  {p.name}
+                  <button
+                    onClick={() =>
+                      setSelectionPeople((prev) =>
+                        prev.filter((x) => x.userId !== p.userId)
+                      )
+                    }
+                    className="rounded-full p-0.5 hover:bg-brand/20"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+              <input
+                type="text"
+                placeholder={
+                  selectionPeople.length === 0
+                    ? "Enter names, emails, or phone numbers"
+                    : "Add more..."
+                }
+                value={selectionSearch}
+                onChange={(e) => setSelectionSearch(e.target.value)}
+                className="flex-1 min-w-[120px] bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
+                autoFocus
+              />
+            </div>
           </div>
 
           {isLoading ? (
@@ -342,31 +392,44 @@ export function AddExpensePage() {
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand border-t-transparent" />
             </div>
           ) : (
-            <div className="overflow-y-auto pb-8">
+            <div className="flex-1 overflow-y-auto pb-24">
               {/* Recent friends */}
               {filteredFriends.length > 0 && (
                 <div>
                   <h2 className="px-4 pt-4 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Recent
                   </h2>
-                  {filteredFriends.map((friend) => (
-                    <button
-                      key={friend.friendId}
-                      onClick={() =>
-                        setSelectedContext({
-                          type: "friend",
-                          id: friend.friendId,
-                        })
-                      }
-                      className="flex w-full items-center gap-3 px-4 py-3 transition-colors hover:bg-muted"
-                    >
-                      <UserAvatar name={friend.name} avatarUrl={friend.avatarUrl} />
-                      <span className="flex-1 text-left text-sm font-medium">
-                        {friend.name}
-                      </span>
-                      <div className="h-5 w-5 rounded-full border-2 border-border" />
-                    </button>
-                  ))}
+                  {filteredFriends.map((friend) => {
+                    const isSelected = selectionPeople.some(
+                      (p) => p.userId === friend.friendId
+                    );
+                    return (
+                      <button
+                        key={friend.friendId}
+                        onClick={() => toggleSelectionPerson(friend)}
+                        className="flex w-full items-center gap-3 px-4 py-3 transition-colors hover:bg-muted"
+                      >
+                        <UserAvatar
+                          name={friend.name}
+                          avatarUrl={friend.avatarUrl}
+                        />
+                        <span className="flex-1 text-left text-sm font-medium">
+                          {friend.name}
+                        </span>
+                        <div
+                          className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                            isSelected
+                              ? "border-brand bg-brand"
+                              : "border-border"
+                          }`}
+                        >
+                          {isSelected && (
+                            <Check className="h-3 w-3 text-brand-foreground" />
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
 
@@ -379,9 +442,11 @@ export function AddExpensePage() {
                   {filteredGroups.map((g) => (
                     <button
                       key={g._id}
-                      onClick={() =>
-                        setSelectedContext({ type: "group", id: g._id })
-                      }
+                      onClick={() => {
+                        setActiveGroupId(g._id);
+                        setShowGroupChip(true);
+                        setFormShown(true);
+                      }}
                       className="flex w-full items-center gap-3 px-4 py-3 transition-colors hover:bg-muted"
                     >
                       <GroupIcon type={g.type} />
@@ -406,11 +471,28 @@ export function AddExpensePage() {
               )}
             </div>
           )}
+
+          {/* Continue button */}
+          {selectionPeople.length > 0 && (
+            <div className="shrink-0 border-t border-border px-4 py-3 pb-[calc(env(safe-area-inset-bottom)+12px)]">
+              <button
+                onClick={() => {
+                  setWithPeople(selectionPeople);
+                  setFormShown(true);
+                }}
+                className="w-full rounded-lg bg-brand py-3 text-sm font-semibold text-brand-foreground"
+              >
+                {needsSelection ? "Continue" : "Done"} with {selectionPeople.length}{" "}
+                {selectionPeople.length === 1 ? "person" : "people"}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
   }
 
+  // ── Expense Form ─────────────────────────────────────────────────────────────
   return (
     <div className="min-h-dvh bg-background">
       <div className="mx-auto w-full max-w-md">
@@ -418,8 +500,12 @@ export function AddExpensePage() {
         <div className="flex items-center justify-between px-4 py-3 pt-[env(safe-area-inset-top)]">
           <button
             onClick={() => {
-              if (needsSelection && selectedContext) {
-                setSelectedContext(null);
+              if (needsSelection && formShown) {
+                setFormShown(false);
+                setActiveGroupId(null);
+                setShowGroupChip(false);
+                setWithPeople([]);
+                setSelectionPeople([]);
               } else {
                 navigate(-1);
               }
@@ -438,12 +524,75 @@ export function AddExpensePage() {
           </button>
         </div>
 
-        {/* Context banner */}
-        <div className="flex items-center gap-2 px-4 py-2">
-          <Users className="h-4 w-4 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">
-            With <span className="font-medium text-foreground">{contextLabel}</span>
-          </p>
+        {/* "With" chip bar (editable) */}
+        <div className="px-4 py-2 border-b border-border">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {/* "You" chip — fixed, non-removable */}
+            <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-foreground">
+              You
+            </span>
+
+            {/* Group chip */}
+            {showGroupChip && group && (
+              <span className="flex items-center gap-1 rounded-full bg-brand/10 border border-brand/30 pl-2.5 pr-1 py-1 text-xs font-medium text-brand">
+                {group.name}
+                <button
+                  onClick={() => {
+                    setShowGroupChip(false);
+                    // Expand group to individual member chips
+                    if (group && viewer) {
+                      setWithPeople(
+                        group.members
+                          .filter((m) => m.userId !== viewer._id)
+                          .map((m) => ({
+                            userId: m.userId,
+                            name: m.name,
+                            avatarUrl: m.avatarUrl,
+                          }))
+                      );
+                    }
+                  }}
+                  className="rounded-full p-0.5 hover:bg-brand/20"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            )}
+
+            {/* Individual person chips */}
+            {!showGroupChip &&
+              withPeople.map((p) => (
+                <span
+                  key={p.userId}
+                  className="flex items-center gap-1 rounded-full bg-muted pl-2.5 pr-1 py-1 text-xs font-medium text-foreground"
+                >
+                  {p.name}
+                  <button
+                    onClick={() =>
+                      setWithPeople((prev) =>
+                        prev.filter((x) => x.userId !== p.userId)
+                      )
+                    }
+                    className="rounded-full p-0.5 hover:bg-muted-foreground/20"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+
+            {/* Add button — goes back to the selection screen to edit */}
+            <button
+              onClick={() => {
+                setSelectionPeople([...withPeople]);
+                setSelectionSearch("");
+                setFormShown(false);
+              }}
+              className="flex items-center gap-1 rounded-full border border-dashed border-border px-2 py-1 text-xs text-muted-foreground hover:bg-muted"
+            >
+              <Plus className="h-3 w-3" />
+              Add
+            </button>
+          </div>
         </div>
 
         {/* Description */}
@@ -547,7 +696,7 @@ export function AddExpensePage() {
                 <button
                   key={p.userId}
                   onClick={() => {
-                    setPayerId(p.userId);
+                    setPayerId(p.userId as Id<"users">);
                     setShowPayerSheet(false);
                   }}
                   className="flex w-full items-center gap-3 px-4 py-3 transition-colors hover:bg-muted"
@@ -722,7 +871,7 @@ export function AddExpensePage() {
   );
 }
 
-// ─── Split Panels ───────────────────────────────────────────────────────────
+// ─── Split Panels ─────────────────────────────────────────────────────────────
 
 function EqualSplitPanel({
   participants,
@@ -748,10 +897,7 @@ function EqualSplitPanel({
         {count > 0 && ` (${count} ${count === 1 ? "person" : "people"})`}
       </p>
       {participants.map((p) => (
-        <label
-          key={p.userId}
-          className="flex items-center gap-3 py-2.5"
-        >
+        <label key={p.userId} className="flex items-center gap-3 py-2.5">
           <input
             type="checkbox"
             checked={included.has(p.userId)}
@@ -814,9 +960,7 @@ function ExactSplitPanel({
       <div className="mt-2 border-t pt-2 text-right">
         <span
           className={`text-sm font-semibold ${
-            Math.abs(remaining) < 0.01
-              ? "text-positive"
-              : "text-negative"
+            Math.abs(remaining) < 0.01 ? "text-positive" : "text-negative"
           }`}
         >
           {remaining >= 0 ? "Remaining" : "Over by"}: {getCurrencySymbol(currency)}
@@ -867,9 +1011,7 @@ function PercentageSplitPanel({
       <div className="mt-2 border-t pt-2 text-right">
         <span
           className={`text-sm font-semibold ${
-            Math.abs(total - 100) < 0.01
-              ? "text-positive"
-              : "text-negative"
+            Math.abs(total - 100) < 0.01 ? "text-positive" : "text-negative"
           }`}
         >
           Total: {total.toFixed(1)}%

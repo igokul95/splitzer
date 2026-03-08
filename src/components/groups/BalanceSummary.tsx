@@ -14,7 +14,7 @@ interface BalanceSummaryProps {
   balances: BalanceDetail[];
 }
 
-export function BalanceSummary({ myNet, defaultCurrency, balances }: BalanceSummaryProps) {
+export function BalanceSummary({ myNet, balances }: BalanceSummaryProps) {
   if (balances.length === 0 || Math.abs(myNet) < 0.01) {
     return (
       <div className="mx-4 my-3 flex items-center gap-2 rounded-lg border border-positive/30 bg-positive-light px-4 py-3">

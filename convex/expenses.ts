@@ -341,7 +341,7 @@ export const getGroupExpenses = query({
     // Filter deleted and sort by date desc
     const active = expenses
       .filter((e) => !e.isDeleted)
-      .sort((a, b) => b.date - a.date);
+      .sort((a, b) => b.date - a.date || b._creationTime - a._creationTime);
 
     const result = await Promise.all(
       active.map(async (expense) => {

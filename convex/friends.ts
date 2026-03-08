@@ -338,6 +338,7 @@ export const getFriendDetail = query({
 
     const nonGroupExpenses: {
       _id: Id<"expenses">;
+      _creationTime: number;
       description: string;
       totalAmount: number;
       currency: string;
@@ -395,6 +396,7 @@ export const getFriendDetail = query({
 
       nonGroupExpenses.push({
         _id: expense._id,
+        _creationTime: expense._creationTime,
         description: expense.description,
         totalAmount: expense.totalAmount,
         currency: expense.currency,
@@ -407,7 +409,7 @@ export const getFriendDetail = query({
       });
     }
 
-    nonGroupExpenses.sort((a, b) => b.date - a.date);
+    nonGroupExpenses.sort((a, b) => b.date - a.date || b._creationTime - a._creationTime);
 
     // Abbreviate friend name for display (e.g. "Abin Benny" -> "Abin B.")
     const nameParts = friend.name.split(" ");

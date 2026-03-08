@@ -5,6 +5,7 @@ import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { getCurrencySymbol } from "@/lib/format";
 import { X, ArrowRight } from "lucide-react";
+import { UserAvatar } from "@/components/shared/UserAvatar";
 
 interface LocationState {
   payerId: string;
@@ -80,30 +81,26 @@ export function SettleUpPage() {
         {/* Payer → Payee visual */}
         <div className="flex items-center justify-center gap-6 px-4 py-8">
           <div className="flex flex-col items-center gap-2">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-light text-xl font-bold text-brand-dark">
-              {state.payerName[0]?.toUpperCase()}
-            </div>
-            <span className="text-sm font-medium">{state.payerName}</span>
+            <UserAvatar name={state.payerName} avatarUrl={state.payerAvatarUrl} size="lg" />
+            <span className="text-sm">{state.payerName}</span>
           </div>
 
           <ArrowRight className="h-6 w-6 text-muted-foreground" />
 
           <div className="flex flex-col items-center gap-2">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-negative-light text-xl font-bold text-negative-dark">
-              {state.payeeName[0]?.toUpperCase()}
-            </div>
-            <span className="text-sm font-medium">{state.payeeName}</span>
+            <UserAvatar name={state.payeeName} avatarUrl={state.payeeAvatarUrl} size="lg" />
+            <span className="text-sm">{state.payeeName}</span>
           </div>
         </div>
 
         {/* Description */}
         <div className="px-4 pb-2 text-center">
           <p className="text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">
+            <span className="text-foreground">
               {state.payerName}
             </span>{" "}
             paid{" "}
-            <span className="font-medium text-foreground">
+            <span className="text-foreground">
               {state.payeeName}
             </span>
           </p>
@@ -112,7 +109,7 @@ export function SettleUpPage() {
         {/* Amount input */}
         <div className="flex justify-center px-4 py-6">
           <div className="relative w-56">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-medium text-muted-foreground">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl text-muted-foreground">
               {getCurrencySymbol(state.currency)}
             </span>
             <input
@@ -122,7 +119,7 @@ export function SettleUpPage() {
               min="0"
               value={amountStr}
               onChange={(e) => setAmountStr(e.target.value)}
-              className="w-full rounded-xl border-2 border-border bg-background py-4 pl-12 pr-4 text-center text-3xl font-bold focus:border-brand focus:outline-none"
+              className="w-full rounded-xl border-2 border-border bg-background py-4 pl-12 pr-4 text-center text-3xl focus:border-brand focus:outline-none"
             />
           </div>
         </div>
@@ -140,7 +137,7 @@ export function SettleUpPage() {
             <button
               onClick={handleRecord}
               disabled={amount <= 0 || saving}
-              className="w-full rounded-full bg-brand py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-hover disabled:bg-muted disabled:text-muted-foreground"
+              className="w-full rounded-full bg-brand py-3 text-sm text-brand-foreground transition-colors hover:bg-brand-hover disabled:bg-muted disabled:text-muted-foreground"
             >
               {saving ? "Recording..." : "Record payment"}
             </button>

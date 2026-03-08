@@ -56,8 +56,8 @@ export function ExpenseDetailSheet({ expenseId, onClose }: { expenseId: Id<"expe
                   );
                 })()}
                 <div className="min-w-0 flex-1">
-                  <SheetTitle className="text-base font-black tracking-tight">{data.description}</SheetTitle>
-                  <SheetDescription className="text-2xl font-black text-foreground">
+                  <SheetTitle className="text-base font-medium tracking-tight">{data.description}</SheetTitle>
+                  <SheetDescription className="text-2xl text-foreground">
                     {formatCurrency(data.totalAmount, data.currency)}
                   </SheetDescription>
                 </div>
@@ -80,12 +80,12 @@ export function ExpenseDetailSheet({ expenseId, onClose }: { expenseId: Id<"expe
 
               {/* Split breakdown */}
               <div>
-                <h4 className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Split breakdown</h4>
+                <h4 className="mb-2 text-xs text-muted-foreground">Split breakdown</h4>
                 <div className="overflow-hidden rounded-lg border border-border bg-muted">
                   {data.splits.map((split, idx) => (
                     <div key={split.userId} className={`flex items-center justify-between px-4 py-3 ${idx > 0 ? "border-t border-border" : ""}`}>
-                      <span className="text-sm font-bold">{split.userName}</span>
-                      <span className={`text-sm font-black ${split.netAmount > 0.005 ? "text-positive" : split.netAmount < -0.005 ? "text-negative" : "text-muted-foreground"}`}>
+                      <span className="text-sm">{split.userName}</span>
+                      <span className={`text-sm ${split.netAmount > 0.005 ? "text-positive" : split.netAmount < -0.005 ? "text-negative" : "text-muted-foreground"}`}>
                         {split.netAmount > 0.005 ? `+${formatCurrency(split.netAmount, data.currency)}` : split.netAmount < -0.005 ? `-${formatCurrency(Math.abs(split.netAmount), data.currency)}` : formatCurrency(0, data.currency)}
                       </span>
                     </div>
@@ -115,8 +115,8 @@ function MetaRow({ icon, label, children, last }: { icon: React.ReactNode; label
   return (
     <div className={`flex items-center gap-3 px-4 py-3 ${!last ? "border-b border-border" : ""}`}>
       <span className="text-muted-foreground">{icon}</span>
-      <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
-      <span className="ml-auto text-sm font-semibold text-foreground">{children}</span>
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="ml-auto text-sm text-foreground">{children}</span>
     </div>
   );
 }

@@ -93,12 +93,16 @@ export function FriendDetailPage() {
     const payeeId = net < 0 ? data.friend._id : viewer._id;
     const payerName = net < 0 ? "You" : data.friend.name;
     const payeeName = net < 0 ? data.friend.name : "You";
+    const payerAvatarUrl = net < 0 ? viewer.avatarUrl : data.friend.avatarUrl;
+    const payeeAvatarUrl = net < 0 ? data.friend.avatarUrl : viewer.avatarUrl;
     navigate("/settle", {
       state: {
         payerId,
         payeeId,
         payerName,
         payeeName,
+        payerAvatarUrl,
+        payeeAvatarUrl,
         amount: Math.abs(net),
         currency,
       },
@@ -241,14 +245,14 @@ export function FriendDetailPage() {
                 }}
               >
                 <div className="text-left">
-                  <p className="text-sm font-semibold text-foreground">{ct.currency}</p>
+                  <p className="text-sm text-foreground">{ct.currency}</p>
                   <p className="text-xs text-muted-foreground">
                     {ct.net > 0
                       ? `${data?.friend.shortName} owes you`
                       : `You owe ${data?.friend.shortName}`}
                   </p>
                 </div>
-                <span className={`text-sm font-bold ${ct.net > 0 ? "text-positive" : "text-negative"}`}>
+                <span className={`text-sm ${ct.net > 0 ? "text-positive" : "text-negative"}`}>
                   {formatCurrency(Math.abs(ct.net), ct.currency)}
                 </span>
               </button>

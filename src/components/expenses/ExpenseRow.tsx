@@ -78,7 +78,7 @@ export function ExpenseRow({ description, date, category, paidByName, paidByAmou
         </p>
       </div>
 
-      <InvolvementLabel type={myInvolvement.type} amount={myInvolvement.amount} currency={currency} />
+      {!isSettlement && <InvolvementLabel type={myInvolvement.type} amount={myInvolvement.amount} currency={currency} />}
     </div>
   );
 }

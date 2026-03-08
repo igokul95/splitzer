@@ -162,6 +162,7 @@ export const getGroup = query({
     const balanceDetails: {
       userId: Id<"users">;
       name: string;
+      avatarUrl?: string;
       amount: number;
       currency: string;
     }[] = [];
@@ -178,6 +179,7 @@ export const getGroup = query({
       balanceDetails.push({
         userId: otherUserId,
         name: otherUser?.name ?? "Unknown",
+        avatarUrl: otherUser?.avatarUrl,
         amount: net,
         currency: bal.currency,
       });

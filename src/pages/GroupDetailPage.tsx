@@ -8,6 +8,7 @@ import { GroupTabBar, BalancesTab, TotalsTab, ExpensesTab } from "@/components/g
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { formatCurrency } from "@/lib/format";
 import { UserPlus, Link as LinkIcon } from "lucide-react";
+import { UserAvatar } from "@/components/shared/UserAvatar";
 import { ExpenseFab } from "@/components/expenses/ExpenseFab";
 import { BottomNav } from "@/components/layout/BottomNav";
 
@@ -34,7 +35,7 @@ export function GroupDetailPage() {
 
   const settleOptions = (group.myBalances ?? []).filter((b) => Math.abs(b.amount) > 0.005);
 
-  function handleSettleMember(bal: { userId: Id<"users">; name: string; amount: number; currency: string }) {
+  function handleSettleMember(bal: { userId: Id<"users">; name: string; avatarUrl?: string; amount: number; currency: string }) {
     if (!viewer) return;
     const payerId = bal.amount < 0 ? viewer._id : bal.userId;
     const payeeId = bal.amount < 0 ? bal.userId : viewer._id;
@@ -44,6 +45,8 @@ export function GroupDetailPage() {
         payerId, payeeId,
         payerName: bal.amount < 0 ? "You" : bal.name,
         payeeName: bal.amount < 0 ? bal.name : "You",
+        payerAvatarUrl: bal.amount < 0 ? viewer.avatarUrl : bal.avatarUrl,
+        payeeAvatarUrl: bal.amount < 0 ? bal.avatarUrl : viewer.avatarUrl,
         amount: Math.abs(bal.amount), currency: bal.currency, groupId: id,
       },
     });
@@ -88,12 +91,9 @@ export function GroupDetailPage() {
         <Sheet open={showSettleSheet} onOpenChange={setShowSettleSheet}>
           <SheetContent side="bottom" showCloseButton={false} className="rounded-t-xl bg-card border-border">
             <SheetHeader>
-              <SheetTitle className="text-base font-semibold">Settle up</SheetTitle>
+              <SheetTitle className="text-base">Which balance to settle?</SheetTitle>
             </SheetHeader>
             <div className="max-h-[60vh] overflow-y-auto pb-6">
-              <p className="px-4 pb-3 text-xs text-muted-foreground">
-                Choose a balance to settle:
-              </p>
               <div className="space-y-2 px-4">
                 {settleOptions.map((bal) => (
                   <button
@@ -101,9 +101,7 @@ export function GroupDetailPage() {
                     onClick={() => handleSettleMember(bal)}
                     className="flex w-full items-center gap-3 rounded-lg border border-border bg-muted p-3.5 transition-all hover:border-brand active:scale-[0.98]"
                   >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-light text-sm text-brand">
-                      {bal.name[0]?.toUpperCase()}
-                    </div>
+                    <UserAvatar name={bal.name} avatarUrl={bal.avatarUrl} />
                     <div className="flex-1 text-left">
                       <p className="text-sm">{bal.name}</p>
                       <p className="text-xs text-muted-foreground">

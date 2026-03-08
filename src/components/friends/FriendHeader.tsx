@@ -1,12 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Settings, CheckCircle2, HandCoins } from "lucide-react";
+import { UserAvatar } from "@/components/shared/UserAvatar";
 
-
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  return name.slice(0, 2).toUpperCase();
-}
 
 interface FriendHeaderProps {
   friendId: string;
@@ -41,13 +36,7 @@ export function FriendHeader({ friendId, name, avatarUrl, totalLines, balanceLin
 
       {/* Avatar + name */}
       <div className="flex items-center gap-3 pt-1">
-        {avatarUrl ? (
-          <img src={avatarUrl} alt={name} className="h-14 w-14 shrink-0 rounded-full object-cover ring-1 ring-border" />
-        ) : (
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-base bg-muted text-muted-foreground">
-            {getInitials(name)}
-          </div>
-        )}
+        <UserAvatar name={name} avatarUrl={avatarUrl} size="lg" />
         <div>
           <h1 className="text-xl text-foreground">{name}</h1>
         </div>

@@ -29,10 +29,9 @@ import {
   ShoppingCart,
   Check,
   Users,
-  Plane,
-  Heart,
-  LayoutGrid,
 } from "lucide-react";
+import { UserAvatar } from "@/components/shared/UserAvatar";
+import { GroupIcon } from "@/components/shared/GroupIcon";
 
 type SplitMethod = "equal" | "exact" | "percentage" | "shares";
 
@@ -56,20 +55,6 @@ const CATEGORIES = [
   { id: "entertainment", label: "Entertainment", icon: Film },
   { id: "shopping", label: "Shopping", icon: ShoppingCart },
 ];
-
-const GROUP_TYPE_ICONS: Record<string, typeof Plane> = {
-  trip: Plane,
-  home: Home,
-  couple: Heart,
-  other: LayoutGrid,
-};
-
-const GROUP_TYPE_COLORS: Record<string, string> = {
-  trip: "bg-orange-500",
-  home: "bg-brand",
-  couple: "bg-pink-500",
-  other: "bg-gray-500",
-};
 
 export function AddExpensePage() {
   const navigate = useNavigate();
@@ -375,17 +360,7 @@ export function AddExpensePage() {
                       }
                       className="flex w-full items-center gap-3 px-4 py-3 transition-colors hover:bg-muted"
                     >
-                      {friend.avatarUrl ? (
-                        <img
-                          src={friend.avatarUrl}
-                          alt={friend.name}
-                          className="h-10 w-10 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-light text-sm font-semibold text-brand-dark">
-                          {friend.name[0]?.toUpperCase()}
-                        </div>
-                      )}
+                      <UserAvatar name={friend.name} avatarUrl={friend.avatarUrl} />
                       <span className="flex-1 text-left text-sm font-medium">
                         {friend.name}
                       </span>
@@ -401,31 +376,21 @@ export function AddExpensePage() {
                   <h2 className="px-4 pt-4 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Groups
                   </h2>
-                  {filteredGroups.map((g) => {
-                    const GIcon =
-                      GROUP_TYPE_ICONS[g.type ?? "other"] ?? LayoutGrid;
-                    const gBg =
-                      GROUP_TYPE_COLORS[g.type ?? "other"] ?? "bg-gray-500";
-                    return (
-                      <button
-                        key={g._id}
-                        onClick={() =>
-                          setSelectedContext({ type: "group", id: g._id })
-                        }
-                        className="flex w-full items-center gap-3 px-4 py-3 transition-colors hover:bg-muted"
-                      >
-                        <div
-                          className={`flex h-10 w-10 items-center justify-center rounded-lg ${gBg}`}
-                        >
-                          <GIcon className="h-5 w-5 text-white" />
-                        </div>
-                        <span className="flex-1 text-left text-sm font-medium">
-                          {g.name}
-                        </span>
-                        <div className="h-5 w-5 rounded-full border-2 border-border" />
-                      </button>
-                    );
-                  })}
+                  {filteredGroups.map((g) => (
+                    <button
+                      key={g._id}
+                      onClick={() =>
+                        setSelectedContext({ type: "group", id: g._id })
+                      }
+                      className="flex w-full items-center gap-3 px-4 py-3 transition-colors hover:bg-muted"
+                    >
+                      <GroupIcon type={g.type} />
+                      <span className="flex-1 text-left text-sm font-medium">
+                        {g.name}
+                      </span>
+                      <div className="h-5 w-5 rounded-full border-2 border-border" />
+                    </button>
+                  ))}
                 </div>
               )}
 
@@ -587,9 +552,7 @@ export function AddExpensePage() {
                   }}
                   className="flex w-full items-center gap-3 px-4 py-3 transition-colors hover:bg-muted"
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-light text-sm font-semibold text-brand-dark">
-                    {p.name[0]?.toUpperCase()}
-                  </div>
+                  <UserAvatar name={p.name} avatarUrl={p.avatarUrl} />
                   <span className="flex-1 text-left text-sm font-medium">
                     {p.name}
                   </span>

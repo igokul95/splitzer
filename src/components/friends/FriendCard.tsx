@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { formatCurrency } from "@/lib/format";
 import { Id } from "../../../convex/_generated/dataModel";
+import { UserAvatar } from "@/components/shared/UserAvatar";
 
 interface GroupBreakdown {
   groupId: Id<"groups"> | undefined;
@@ -24,12 +25,6 @@ interface FriendCardProps {
 }
 
 
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  return name.slice(0, 2).toUpperCase();
-}
-
 export function FriendCard({ friendId, name, avatarUrl, status, netByCurrency, groupBreakdowns }: FriendCardProps) {
   const visibleBreakdowns = groupBreakdowns.slice(0, 3);
   const hiddenCount = groupBreakdowns.length - visibleBreakdowns.length;
@@ -41,15 +36,7 @@ export function FriendCard({ friendId, name, avatarUrl, status, netByCurrency, g
     >
       {/* Row 1: avatar + name + balance — all vertically centred */}
       <div className="flex items-center gap-3">
-        <div className="shrink-0">
-          {avatarUrl ? (
-            <img src={avatarUrl} alt={name} className="h-10 w-10 rounded-full object-cover" />
-          ) : (
-            <div className="flex h-10 w-10 items-center justify-center rounded-full text-sm bg-muted text-muted-foreground">
-              {getInitials(name)}
-            </div>
-          )}
-        </div>
+        <UserAvatar name={name} avatarUrl={avatarUrl} />
         <div className="min-w-0 flex-1 flex items-center gap-2">
           <span className="truncate text-[15px] text-foreground">{name}</span>
           {status === "invited" && (

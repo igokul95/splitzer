@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
-import { Plane, Home, Heart, LayoutGrid } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import type { GroupType } from "@/lib/format";
 import { Id } from "../../../convex/_generated/dataModel";
+import { GroupIcon } from "@/components/shared/GroupIcon";
 
 interface MemberBalance {
   userId: Id<"users">;
@@ -20,20 +20,6 @@ interface GroupCardProps {
   memberBalances: MemberBalance[];
 }
 
-const TYPE_ICONS = {
-  trip: Plane,
-  home: Home,
-  couple: Heart,
-  other: LayoutGrid,
-};
-
-const TYPE_COLORS = {
-  trip: "text-orange-400",
-  home: "text-brand",
-  couple: "text-pink-400",
-  other: "text-muted-foreground",
-};
-
 export function GroupCard({
   groupId,
   name,
@@ -42,8 +28,6 @@ export function GroupCard({
   defaultCurrency,
   memberBalances,
 }: GroupCardProps) {
-  const Icon = TYPE_ICONS[type] || LayoutGrid;
-  const iconColor = TYPE_COLORS[type] || "text-muted-foreground";
   const displayBalances = memberBalances.slice(0, 2);
   const remainingCount = memberBalances.length - 2;
 
@@ -53,8 +37,8 @@ export function GroupCard({
       className="flex items-start gap-3 py-3.5 transition-opacity active:opacity-60"
     >
       {/* Group type icon */}
-      <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-muted">
-        <Icon className={`h-4 w-4 ${iconColor}`} />
+      <div className="mt-0.5">
+        <GroupIcon type={type} />
       </div>
 
       {/* Group info */}

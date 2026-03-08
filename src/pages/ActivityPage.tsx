@@ -5,14 +5,9 @@ import { ExpenseFab } from "@/components/expenses/ExpenseFab";
 import { formatCurrency } from "@/lib/format";
 import { Activity } from "lucide-react";
 import { FunctionReturnType } from "convex/server";
+import { UserAvatar } from "@/components/shared/UserAvatar";
 
 type ActivityItem = FunctionReturnType<typeof api.activities.getMyActivities>[number];
-
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  return name.slice(0, 2).toUpperCase();
-}
 
 export function ActivityPage() {
   const activities = useQuery(api.activities.getMyActivities);
@@ -63,13 +58,7 @@ function ActivityItemRow({ item }: { item: ActivityItem }) {
   return (
     <div className="flex items-start gap-3 py-3.5">
       <div className="mt-0.5 shrink-0">
-        {item.actorAvatarUrl ? (
-          <img src={item.actorAvatarUrl} alt="" className="h-10 w-10 rounded-full object-cover" />
-        ) : (
-          <div className="flex h-10 w-10 items-center justify-center rounded-full text-sm bg-muted text-muted-foreground">
-            {getInitials(item.actorName)}
-          </div>
-        )}
+        <UserAvatar name={item.actorName} avatarUrl={item.actorAvatarUrl} />
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-[14px] leading-snug text-foreground">{description}</p>

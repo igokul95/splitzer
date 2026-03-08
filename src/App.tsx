@@ -10,7 +10,6 @@ import { CreateGroupPage } from "@/pages/CreateGroupPage";
 import { GroupSettingsPage } from "@/pages/GroupSettingsPage";
 import { AddMembersPage } from "@/pages/AddMembersPage";
 import { AddContactPage } from "@/pages/AddContactPage";
-import { CreateAddMembersPage } from "@/pages/CreateAddMembersPage";
 import { CreateAddContactPage } from "@/pages/CreateAddContactPage";
 import { FriendsPage } from "@/pages/FriendsPage";
 import { FriendDetailPage } from "@/pages/FriendDetailPage";
@@ -84,7 +83,7 @@ export default function App() {
               path="/groups/create/add-members"
               element={
                 <AuthGuard>
-                  <CreateAddMembersPage />
+                  <AddMembersPage />
                 </AuthGuard>
               }
             />

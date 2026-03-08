@@ -271,15 +271,15 @@ export const getGroupMembers = query({
 
 /**
  * Get known contacts for the "Add members" view.
- * Returns people the current user has been in groups with,
- * excluding those already in the target group.
+ * Returns people the current user has shared groups or expenses with.
+ * If groupId is provided, excludes people already in that group.
  */
 export const getKnownContacts = query({
-  args: { groupId: v.id("groups") },
+  args: { groupId: v.optional(v.id("groups")) },
   handler: async (ctx, args) => {
     const me = await getAuthUser(ctx);
 
-    // 1. Get all groups I'm a member of
+    // 1. Collect all known user IDs from shared groups
     const myMemberships = await ctx.db
       .query("groupMembers")
       .withIndex("by_user", (q) => q.eq("userId", me._id))
@@ -289,7 +289,6 @@ export const getKnownContacts = query({
       .filter((m) => m.status !== "left")
       .map((m) => m.groupId);
 
-    // 2. Get all members from those groups
     const seenUserIds = new Set<string>();
     for (const gId of myGroupIds) {
       const members = await ctx.db
@@ -303,77 +302,31 @@ export const getKnownContacts = query({
       }
     }
 
-    // 3. Get members already in the target group (to exclude)
-    const targetMembers = await ctx.db
-      .query("groupMembers")
-      .withIndex("by_group", (q) => q.eq("groupId", args.groupId))
+    // 2. Also include friends from friendBalances
+    const fbAsUser1 = await ctx.db
+      .query("friendBalances")
+      .withIndex("by_user1", (q) => q.eq("user1", me._id))
       .collect();
-
-    const targetMemberIds = new Set(
-      targetMembers
-        .filter((m) => m.status !== "left")
-        .map((m) => m.userId as string)
-    );
-
-    // 4. Filter out already-in-group and self, then fetch user details
-    const contactIds = [...seenUserIds].filter(
-      (uid) => !targetMemberIds.has(uid)
-    );
-
-    const contacts = await Promise.all(
-      contactIds.map(async (uid) => {
-        const user = await ctx.db.get(uid as Id<"users">);
-        if (!user) return null;
-        return {
-          _id: user._id,
-          name: user.name,
-          email: user.email,
-          phone: user.phone,
-          avatarUrl: user.avatarUrl,
-          status: user.status,
-        };
-      })
-    );
-
-    return contacts.filter(Boolean);
-  },
-});
-
-/**
- * Get all people the current user has been in groups with.
- * Same as getKnownContacts but without excluding members of a specific group.
- * Used by CreateGroupPage where no group exists yet.
- */
-export const getAllKnownContacts = query({
-  args: {},
-  handler: async (ctx) => {
-    const me = await getAuthUser(ctx);
-
-    // 1. Get all groups I'm a member of
-    const myMemberships = await ctx.db
-      .query("groupMembers")
-      .withIndex("by_user", (q) => q.eq("userId", me._id))
+    const fbAsUser2 = await ctx.db
+      .query("friendBalances")
+      .withIndex("by_user2", (q) => q.eq("user2", me._id))
       .collect();
+    for (const fb of fbAsUser1) seenUserIds.add(fb.user2);
+    for (const fb of fbAsUser2) seenUserIds.add(fb.user1);
+    seenUserIds.delete(me._id);
 
-    const myGroupIds = myMemberships
-      .filter((m) => m.status !== "left")
-      .map((m) => m.groupId);
-
-    // 2. Get all members from those groups
-    const seenUserIds = new Set<string>();
-    for (const gId of myGroupIds) {
-      const members = await ctx.db
+    // 3. If groupId provided, exclude people already in that group
+    if (args.groupId) {
+      const targetMembers = await ctx.db
         .query("groupMembers")
-        .withIndex("by_group", (q) => q.eq("groupId", gId))
+        .withIndex("by_group", (q) => q.eq("groupId", args.groupId!))
         .collect();
-      for (const m of members) {
-        if (m.status !== "left" && m.userId !== me._id) {
-          seenUserIds.add(m.userId);
-        }
+      for (const m of targetMembers) {
+        if (m.status !== "left") seenUserIds.delete(m.userId);
       }
     }
 
-    // 3. Fetch user details
+    // 4. Fetch user details
     const contacts = await Promise.all(
       [...seenUserIds].map(async (uid) => {
         const user = await ctx.db.get(uid as Id<"users">);

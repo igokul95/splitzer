@@ -4,7 +4,7 @@ import { MobileShell } from "@/components/layout/MobileShell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { X } from "lucide-react";
-import type { CreateGroupFormState, PendingMember } from "./CreateAddMembersPage";
+import type { CreateGroupFormState, PendingMember } from "./AddMembersPage";
 
 export function CreateAddContactPage() {
   const navigate = useNavigate();

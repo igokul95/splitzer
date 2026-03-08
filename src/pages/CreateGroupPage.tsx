@@ -17,7 +17,7 @@ import {
   X,
 } from "lucide-react";
 import type { GroupType } from "@/lib/format";
-import type { PendingMember } from "./CreateAddMembersPage";
+import type { PendingMember } from "./AddMembersPage";
 
 const GROUP_TYPES: {
   value: GroupType;

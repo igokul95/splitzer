@@ -7,72 +7,121 @@ import { MobileShell } from "@/components/layout/MobileShell";
 import { Input } from "@/components/ui/input";
 import { UserPlus, Search, Check } from "lucide-react";
 
+export interface PendingMember {
+  name: string;
+  email?: string;
+  phone?: string;
+  _id?: string;
+  avatarUrl?: string | null;
+}
+
+export interface CreateGroupFormState {
+  name: string;
+  type: string;
+  pendingMembers: PendingMember[];
+}
+
 export function AddMembersPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const groupId = id as Id<"groups">;
 
-  // Where to navigate after done/cancel (default: group detail)
+  // Create-group flow: no groupId in URL, formState passed via location.state
+  const isCreateFlow = !id;
+  const formState: CreateGroupFormState = location.state?.formState ?? {
+    name: "",
+    type: "trip",
+    pendingMembers: [],
+  };
   const returnTo = (location.state as { returnTo?: string } | null)?.returnTo;
-  const defaultReturn = `/groups/${id}`;
+
+  const groupId = id as Id<"groups"> | undefined;
+  const addMember = useMutation(api.groups.addMember);
 
   const contacts = useQuery(
     api.groups.getKnownContacts,
-    id ? { groupId } : "skip"
+    groupId ? { groupId } : {}
   );
-  const addMember = useMutation(api.groups.addMember);
 
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [isAdding, setIsAdding] = useState(false);
 
-  if (!id) {
-    navigate("/groups");
-    return null;
-  }
-
-  const filteredContacts = (contacts ?? []).filter((c) =>
-    c && c.name.toLowerCase().includes(search.toLowerCase())
+  // In create flow, exclude already-pending members
+  const pendingIds = new Set(
+    formState.pendingMembers.filter((m) => m._id).map((m) => m._id!)
+  );
+  const availableContacts = (contacts ?? []).filter(
+    (c) => c && (!isCreateFlow || !pendingIds.has(c._id))
+  );
+  const filteredContacts = availableContacts.filter(
+    (c) => c && c.name.toLowerCase().includes(search.toLowerCase())
   );
 
   const toggleSelect = (userId: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(userId)) {
-        next.delete(userId);
-      } else {
-        next.add(userId);
-      }
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
       return next;
     });
   };
 
+  const handleCancel = () => {
+    if (isCreateFlow) navigate("/groups/create", { state: { formState } });
+    else navigate(returnTo || `/groups/${id}`);
+  };
+
   const handleDone = async () => {
     if (selected.size === 0) {
-      navigate(returnTo || defaultReturn);
+      handleCancel();
       return;
     }
 
-    setIsAdding(true);
-    try {
-      for (const userId of selected) {
-        const contact = (contacts ?? []).find((c) => c && c._id === userId);
-        if (contact) {
-          await addMember({
-            groupId,
-            name: contact.name,
-            email: contact.email ?? undefined,
-            phone: contact.phone ?? undefined,
-          });
+    if (isCreateFlow) {
+      const newMembers: PendingMember[] = availableContacts
+        .filter((c) => c && selected.has(c._id))
+        .map((c) => ({
+          _id: c!._id,
+          name: c!.name,
+          email: c!.email ?? undefined,
+          phone: c!.phone ?? undefined,
+          avatarUrl: c!.avatarUrl,
+        }));
+      navigate("/groups/create", {
+        state: {
+          formState: {
+            ...formState,
+            pendingMembers: [...formState.pendingMembers, ...newMembers],
+          },
+        },
+      });
+    } else {
+      setIsAdding(true);
+      try {
+        for (const userId of selected) {
+          const contact = (contacts ?? []).find((c) => c && c._id === userId);
+          if (contact) {
+            await addMember({
+              groupId: groupId!,
+              name: contact.name,
+              email: contact.email ?? undefined,
+              phone: contact.phone ?? undefined,
+            });
+          }
         }
+        navigate(returnTo || `/groups/${id}`);
+      } catch (err) {
+        console.error("Failed to add members:", err);
+        setIsAdding(false);
       }
-      navigate(returnTo || defaultReturn);
-    } catch (err) {
-      console.error("Failed to add members:", err);
-      setIsAdding(false);
     }
   };
+
+  const addContactPath = isCreateFlow
+    ? "/groups/create/add-contact"
+    : `/groups/${id}/add-contact`;
+  const addContactState = isCreateFlow ? { formState } : { returnTo };
 
   return (
     <MobileShell hideNav>
@@ -80,13 +129,13 @@ export function AddMembersPage() {
         {/* Header */}
         <header className="flex items-center justify-between py-4">
           <button
-            onClick={() => navigate(returnTo || defaultReturn)}
+            onClick={handleCancel}
             className="text-sm font-medium text-brand"
           >
             Cancel
           </button>
           <h1 className="text-base font-bold">Add group members</h1>
-          <div className="w-12" /> {/* Spacer for centering */}
+          <div className="w-12" />
         </header>
 
         {/* Search bar */}
@@ -102,8 +151,8 @@ export function AddMembersPage() {
 
         {/* Add a new contact */}
         <Link
-          to={`/groups/${id}/add-contact`}
-          state={{ returnTo }}
+          to={addContactPath}
+          state={addContactState}
           className="flex items-center gap-3 border-b border-border py-3"
         >
           <div className="flex h-10 w-10 items-center justify-center">
@@ -141,7 +190,6 @@ export function AddMembersPage() {
                       onClick={() => toggleSelect(contact._id)}
                       className="flex w-full items-center gap-3 py-3 text-left transition-colors active:bg-muted/50"
                     >
-                      {/* Avatar */}
                       {contact.avatarUrl ? (
                         <img
                           src={contact.avatarUrl}
@@ -149,17 +197,13 @@ export function AddMembersPage() {
                           className="h-10 w-10 rounded-full object-cover"
                         />
                       ) : (
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand text-sm font-bold text-white">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand text-sm font-bold text-brand-foreground">
                           {contact.name.charAt(0).toUpperCase()}
                         </div>
                       )}
-
-                      {/* Name */}
                       <span className="flex-1 truncate text-sm font-medium">
                         {contact.name}
                       </span>
-
-                      {/* Selection circle */}
                       <div
                         className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
                           isSelected
@@ -168,7 +212,7 @@ export function AddMembersPage() {
                         }`}
                       >
                         {isSelected && (
-                          <Check className="h-3.5 w-3.5 text-white" />
+                          <Check className="h-3.5 w-3.5 text-brand-foreground" />
                         )}
                       </div>
                     </button>
@@ -185,7 +229,7 @@ export function AddMembersPage() {
             <button
               onClick={handleDone}
               disabled={isAdding}
-              className="flex w-full items-center justify-center gap-2 rounded-full bg-brand py-3 text-sm font-medium text-white shadow-lg transition-all hover:bg-brand-hover active:scale-[0.98] disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-brand py-3 text-sm font-medium text-brand-foreground shadow-lg transition-all hover:bg-brand-hover active:scale-[0.98] disabled:opacity-60"
             >
               {isAdding
                 ? "Adding..."

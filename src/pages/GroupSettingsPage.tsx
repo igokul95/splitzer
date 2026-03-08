@@ -30,6 +30,7 @@ import {
   Trash2,
   Crown,
 } from "lucide-react";
+import { UserAvatar } from "@/components/shared/UserAvatar";
 import { SUPPORTED_CURRENCIES } from "@/lib/format";
 import type { GroupType } from "@/lib/format";
 
@@ -247,17 +248,7 @@ export function GroupSettingsPage() {
                   className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2.5"
                 >
                   <div className="flex items-center gap-2">
-                    {m.avatarUrl ? (
-                      <img
-                        src={m.avatarUrl}
-                        alt=""
-                        className="h-8 w-8 rounded-full"
-                      />
-                    ) : (
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">
-                        {m.name.charAt(0).toUpperCase()}
-                      </div>
-                    )}
+                    <UserAvatar name={m.name} avatarUrl={m.avatarUrl} size="sm" />
                     <div>
                       <div className="flex items-center gap-1.5">
                         <p className="text-sm font-medium">{m.name}</p>

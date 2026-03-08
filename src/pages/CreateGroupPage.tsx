@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import type { GroupType } from "@/lib/format";
 import type { PendingMember } from "./AddMembersPage";
+import { UserAvatar } from "@/components/shared/UserAvatar";
 
 const GROUP_TYPES: {
   value: GroupType;
@@ -159,17 +160,7 @@ export function CreateGroupPage() {
               {/* Creator (You) */}
               <div className="flex items-center rounded-xl bg-muted/50 px-3 py-2.5">
                 <div className="flex items-center gap-2">
-                  {viewer?.avatarUrl ? (
-                    <img
-                      src={viewer.avatarUrl}
-                      alt=""
-                      className="h-8 w-8 rounded-lg object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-xs font-bold text-white">
-                      {(viewer?.name ?? "Y").charAt(0).toUpperCase()}
-                    </div>
-                  )}
+                  <UserAvatar name={viewer?.name ?? "You"} avatarUrl={viewer?.avatarUrl} size="sm" />
                   <p className="text-sm font-semibold">
                     {viewer?.name ?? "You"}
                   </p>
@@ -183,17 +174,7 @@ export function CreateGroupPage() {
                   className="flex items-center justify-between rounded-xl bg-muted/50 px-3 py-2.5"
                 >
                   <div className="flex items-center gap-2">
-                    {m.avatarUrl ? (
-                      <img
-                        src={m.avatarUrl}
-                        alt=""
-                        className="h-8 w-8 rounded-full"
-                      />
-                    ) : (
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">
-                        {m.name.charAt(0).toUpperCase()}
-                      </div>
-                    )}
+                    <UserAvatar name={m.name} avatarUrl={m.avatarUrl} size="sm" />
                     <div>
                       <p className="text-sm font-medium">{m.name}</p>
                       {(m.email || m.phone) && (

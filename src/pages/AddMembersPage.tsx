@@ -6,6 +6,7 @@ import { Id } from "../../convex/_generated/dataModel";
 import { MobileShell } from "@/components/layout/MobileShell";
 import { Input } from "@/components/ui/input";
 import { UserPlus, Search, Check } from "lucide-react";
+import { UserAvatar } from "@/components/shared/UserAvatar";
 
 export interface PendingMember {
   name: string;
@@ -190,17 +191,7 @@ export function AddMembersPage() {
                       onClick={() => toggleSelect(contact._id)}
                       className="flex w-full items-center gap-3 py-3 text-left transition-colors active:bg-muted/50"
                     >
-                      {contact.avatarUrl ? (
-                        <img
-                          src={contact.avatarUrl}
-                          alt=""
-                          className="h-10 w-10 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand text-sm font-bold text-brand-foreground">
-                          {contact.name.charAt(0).toUpperCase()}
-                        </div>
-                      )}
+                      <UserAvatar name={contact.name} avatarUrl={contact.avatarUrl} />
                       <span className="flex-1 truncate text-sm font-medium">
                         {contact.name}
                       </span>

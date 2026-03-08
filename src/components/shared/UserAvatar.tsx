@@ -9,14 +9,14 @@ function getInitials(name: string): string {
 interface UserAvatarProps {
   name: string;
   avatarUrl?: string | null;
-  /** "md" = 40px (default), "lg" = 56px */
-  size?: "md" | "lg";
+  /** "sm" = 32px, "md" = 40px (default), "lg" = 56px, "xl" = 64px */
+  size?: "sm" | "md" | "lg" | "xl";
 }
 
 export function UserAvatar({ name, avatarUrl, size = "md" }: UserAvatarProps) {
   const [imgError, setImgError] = useState(false);
-  const dim = size === "lg" ? "h-14 w-14" : "h-10 w-10";
-  const text = size === "lg" ? "text-base" : "text-sm";
+  const dim = size === "xl" ? "h-16 w-16" : size === "lg" ? "h-14 w-14" : size === "sm" ? "h-8 w-8" : "h-10 w-10";
+  const text = size === "xl" ? "text-xl" : size === "lg" ? "text-base" : size === "sm" ? "text-xs" : "text-sm";
 
   if (avatarUrl && !imgError) {
     return (

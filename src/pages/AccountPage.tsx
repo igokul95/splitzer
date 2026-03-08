@@ -3,13 +3,13 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { MobileShell } from "@/components/layout/MobileShell";
 import { LogOut, Mail, Phone, Globe, ChevronRight } from "lucide-react";
+import { UserAvatar } from "@/components/shared/UserAvatar";
 
 export function AccountPage() {
   const { user: clerkUser } = useUser();
   const viewer = useQuery(api.users.getViewer);
 
   const displayName = viewer?.name ?? clerkUser?.firstName ?? "User";
-  const initials = displayName.charAt(0).toUpperCase();
 
   return (
     <MobileShell>
@@ -20,13 +20,7 @@ export function AccountPage() {
 
         {/* Profile Card */}
         <div className="mb-3 flex items-center gap-4 rounded-lg border border-border bg-card p-4">
-          {clerkUser?.imageUrl ? (
-            <img src={clerkUser.imageUrl} alt="" className="h-16 w-16 rounded-full object-cover" />
-          ) : (
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted text-xl text-muted-foreground">
-              {initials}
-            </div>
-          )}
+          <UserAvatar name={displayName} avatarUrl={viewer?.avatarUrl ?? clerkUser?.imageUrl} size="xl" />
           <div>
             <p className="text-base">{displayName}</p>
             <p className="text-sm text-muted-foreground">
